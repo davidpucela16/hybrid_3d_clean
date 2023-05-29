@@ -79,7 +79,7 @@ sys.path.append(os.path.join(script_dir, "src_final"))
 
 Output_Folder=os.path.join(path_network, "Kleinfeld")
 cells_3D=10
-n=2
+n=1
 mat_path=os.path.join(Output_Folder,"F{}_n{}".format(cells_3D, n))
 #output_dir_network="/home/pdavid/Bureau/Code/hybrid3d/Synthetic_Rea{}/{}/divided_files".format(Network, gradient)
 output_dir_network=os.path.join(path_network, "Kleinfeld_divided")
@@ -151,28 +151,26 @@ df = pd.read_csv(output_dir_network + '/output_6.txt', skiprows=1, sep="\s+", na
 with open(output_dir_network + '/output_6.txt', 'r') as file:
     # Read the first line
     output_six= file.readline()
-
-#I increase the Pe because it is way too slow
 Fictional_edge=np.ndarray.flatten(df.values)
 
 
 df = pd.read_csv(output_dir_network + '/output_7.txt', skiprows=1, sep="\s+", names=["flow_rate"])
 with open(output_dir_network + '/output_7.txt', 'r') as file:
     # Read the first line
-    output_six= file.readline()
+    output_seven= file.readline()
 ArtVenCap_Label=np.ndarray.flatten(df.values)
 
 df = pd.read_csv(output_dir_network + '/output_8.txt', skiprows=1, sep="\s+", names=["length"])
 with open(output_dir_network + '/output_8.txt', 'r') as file:
     # Read the first line
-    output_four= file.readline()
+    output_eight= file.readline()
 diameters=np.ndarray.flatten(df.values)
 
 
 df = pd.read_csv(output_dir_network + '/output_10.txt', skiprows=1, sep="\s+", names=["length"])
 with open(output_dir_network + '/output_10.txt', 'r') as file:
     # Read the first line
-    output_four= file.readline()
+    output_ten= file.readline()
 Flow_rate=np.ndarray.flatten(df.values)
 
 df = pd.read_csv(output_dir_network + '/output_12.txt', skiprows=1, sep="\s+", names=["length"])
@@ -180,6 +178,9 @@ with open(output_dir_network + '/output_12.txt', 'r') as file:
     # Read the first line
     output_twelve= file.readline()
 Pressure=np.ndarray.flatten(df.values)
+
+
+pos_vertex-=np.min(pos_vertex, axis=0)
 
 
 K=np.average(diameters)/np.ndarray.flatten(diameters)
@@ -222,7 +223,7 @@ BC_value=np.array([0,0,0,0,0,0])
 net=mesh_1D( startVertex, endVertex, vertex_to_edge ,pos_vertex, diameters, np.average(diameters)/2,np.average(U))
 net.U=np.ndarray.flatten(U)
 
-mesh=cart_mesh_3D(L_3D,cells_3D, np.min(pos_vertex, axis=0))
+mesh=cart_mesh_3D(L_3D,cells_3D)
 net.PositionalArraysFast(mesh)
 
 cumulative_flow=np.zeros(3)
@@ -234,7 +235,7 @@ print("cumulative flow= ", cumulative_flow)
 prob=hybrid_set_up(mesh, net, BC_type, BC_value,n,1, K, BCs_1D)
 #TRUE if no need to compute the matrices
 prob.phi_bar_bool=False
-prob.B_assembly_bool=True
+prob.B_assembly_bool=False
 prob.I_assembly_bool=False
 sol_linear_system=False
 #%%
