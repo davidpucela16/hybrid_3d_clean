@@ -5,14 +5,17 @@ Created on Sat Mar 18 18:47:23 2023
 
 @author: pdavid
 """
+import sys
 import os 
 path=os.path.dirname(__file__)
-path_src=os.path.join(path, '../')
+path_src=os.path.join(path, '../src_final')
+path_figures=os.path.join(path, "/figures")
 from Potentials_module import Classic, Alternatives
-os.chdir(path_src)
+sys.path.append(path_src)
+
 
 import numpy as np
-from assembly import AssemblyTransport1D
+from assembly_1D import AssemblyTransport1D
 import matplotlib.pyplot as plt
 import scipy as sp
 import scipy.sparse.linalg
@@ -59,10 +62,10 @@ import matplotlib.pyplot as plt
 import math
 
 from mesh_1D import mesh_1D
-from Green import GetSourcePotential
+from GreenFast import GetSourcePotential
 import pdb
 
-from hybrid_set_up_noboundary import hybrid_set_up, Visualization3D
+from hybridFast import hybrid_set_up
 
 from neighbourhood import GetNeighbourhood, GetUncommon
 #%
@@ -85,20 +88,20 @@ mesh.AssemblyBoundaryVectors()
 startVertex=np.array([0])
 endVertex=np.array([1])
 pos_vertex=np.array([[L[0]/2, 0.01, L[0]/2],[L[0]/2, L[1]-0.01,L[0]/2]])
-vertex_to_edge=[[0],[1]]
+vertex_to_edge=[[0],[0]]
 diameters=np.array([2*R])
 h=np.array([L[0]])/cells_1D
 
 net=mesh_1D(startVertex, endVertex, vertex_to_edge ,pos_vertex, diameters, h,1)
 net.U=U
 net.D=D
-net.PositionalArrays(mesh)
+net.PositionalArraysFast(mesh)
 
 #%%
-prob=hybrid_set_up(mesh, net, BC_type, BC_value, n, 1, np.zeros(len(diameters))+K)
+prob=hybrid_set_up(mesh, net, BC_type, BC_value, n, 1, np.zeros(len(diameters))+K, np.array([[0,1],[1,0]]))
 
 mesh.GetOrderedConnectivityMatrix()
-prob.AssemblyProblem()
+prob.AssemblyProblem('/home/pdavid/Bureau/Code/BMF_Code/kk')
 
 
 
@@ -115,7 +118,6 @@ plt.show()
 
 #%%
 
-a=Visualization3D([0, L[0]], 51, prob, 12, 0.1)
 
 #%%
 

@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Array of search phrases
-search_phrases=("dtype=np.float64")
+search_phrases=("script_path", "script_dir", "Output_Folder", "mat_path" , "output_dir_network", "sol_path")
 # Array of replacement phrases
-replacement_phrases=("dtype=np.float64")
+replacement_phrases=("script", "path_script", "path_output", "path_matrices" ,"path_output_network", "path_output_data")
  
 
 

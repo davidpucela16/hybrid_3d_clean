@@ -152,7 +152,7 @@ class Classic():
     def get_single_layer_point(self, axial_disc, point):
         """The influence of the whole vessel on the point. point is given between
         zero and one"""
-        x=np.linspace(0,self.L*(1-1/axial_disc),axial_disc)
+        x=np.linspace(0,self.L*(1-1/axial_disc),axial_disc)+self.L/axial_disc/2
         self.x=x
         
         G=np.empty(len(x))
@@ -173,7 +173,7 @@ class Classic():
     def get_double_layer_point(self,axial_disc, point):
         """The influence of the whole vessel on the point. point is given between
         zero and one"""
-        x=np.linspace(0,self.L*(1-1/axial_disc),axial_disc)
+        x=np.linspace(0,self.L*(1-1/axial_disc),axial_disc)+self.L/axial_disc/2
         self.x=x
         
         H=np.empty(len(x))
@@ -195,7 +195,7 @@ class Classic():
     def get_single_layer_vessel(self, axial_disc):
         """Computes the full matrix of single layer coefficients for a whole 
         straight vessel. Gij for all i and all j"""
-        x=np.linspace(0,self.L*(1-1/axial_disc),axial_disc)
+        x=np.linspace(0,self.L*(1-1/axial_disc),axial_disc)+self.L/axial_disc/2
         self.x=x
         
         G_hat=np.empty((len(x), len(x)))
@@ -216,7 +216,7 @@ class Classic():
     def get_double_layer_vessel(self, axial_disc):
         """Computes the full matrix of double layer coefficients for a whole 
         straight vessel. Hij for all i and all j"""
-        x=np.linspace(0,self.L*(1-1/axial_disc),axial_disc)
+        x=np.linspace(0,self.L*(1-1/axial_disc),axial_disc)+self.L/axial_disc/2
         self.x=x
         
         H=np.empty((len(x), len(x)))

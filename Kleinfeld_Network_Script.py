@@ -34,21 +34,21 @@ Created on Tue May 23 18:04:46 2023
 # Network=1
 # gradient="x"
 # 
-# #Output_Folder="/home/pdavid/Bureau/Code/hybrid3d/Synthetic_Rea{}".format(Network)
-# Output_Folder=os.path.join(path_current_file, "Kleinfeld")
+# #path_output="/home/pdavid/Bureau/Code/hybrid3d/Synthetic_Rea{}".format(Network)
+# path_output=os.path.join(path_current_file, "Kleinfeld")
 # cells_3D=10
 # n=2
-# mat_path=os.path.join(Output_Folder,"F{}_n{}".format(cells_3D, n))
+# path_matrices=os.path.join(path_output,"F{}_n{}".format(cells_3D, n))
 # output_dir_network="/home/pdavid/Bureau/Code/hybrid3d/Synthetic_Rea{}/{}/divided_files".format(Network, gradient)
 # filename=os.path.join(path_network,"Network1_Figure_Data.txt")
-# out_data_dir=mat_path + '/out_data'
+# path_output_data=path_matrices + '/out_data'
 # 
 # 
 # #output_dir_network = '/home/pdavid/Bureau/PhD/Network_Flo/All_files/Split/'  # Specify the output directory here
 # os.makedirs(output_dir_network, exist_ok=True)  # Create the output directory if it doesn't exist
-# os.makedirs(Output_Folder, exist_ok=True)
-# os.makedirs(mat_path, exist_ok=True)
-# os.makedirs(out_data_dir, exist_ok=True)
+# os.makedirs(path_output, exist_ok=True)
+# os.makedirs(path_matrices, exist_ok=True)
+# os.makedirs(path_output_data, exist_ok=True)
 # 
 # output_files = SplitFile(filename, output_dir_network)
 # 
@@ -68,29 +68,29 @@ import sys
 
 
 #path_current_file=os.path.dirname(__file__)
-script_path = os.path.abspath(sys.argv[0])
-script_dir = os.path.dirname(script_path)
-print(script_dir)
+script = os.path.abspath(sys.argv[0])
+path_script = os.path.dirname(script)
+print(path_script)
 #path_network="/home/pdavid/Bureau/PhD/Network_Flo/All_files"
-path_network = os.path.join(script_dir, "..") #The path with the network
+path_network = os.path.join(path_script, "..") #The path with the network
 #os.chdir('/home/pdavid/Bureau/Code/hybrid3d/src_final')
 #sys.path.append('/home/pdavid/Bureau/Code/hybrid3d/src_final')
-sys.path.append(os.path.join(script_dir, "src_final"))
+sys.path.append(os.path.join(path_script, "src_final"))
 
-Output_Folder=os.path.join(path_network, "Kleinfeld")
+path_output=os.path.join(path_network, "Kleinfeld")
 cells_3D=10
 n=1
-mat_path=os.path.join(Output_Folder,"F{}_n{}".format(cells_3D, n))
+path_matrices=os.path.join(path_output,"F{}_n{}".format(cells_3D, n))
 #output_dir_network="/home/pdavid/Bureau/Code/hybrid3d/Synthetic_Rea{}/{}/divided_files".format(Network, gradient)
 output_dir_network=os.path.join(path_network, "Kleinfeld_divided")
 filename=os.path.join(path_network,"Network1_Figure_Data.txt")
-out_data_dir=mat_path + '/out_data'
+path_output_data=path_matrices + '/out_data'
 
 #output_dir_network = '/home/pdavid/Bureau/PhD/Network_Flo/All_files/Split/'  # Specify the output directory here
 os.makedirs(output_dir_network, exist_ok=True)  # Create the output directory if it doesn't exist
-os.makedirs(Output_Folder, exist_ok=True)
-os.makedirs(mat_path, exist_ok=True)
-os.makedirs(out_data_dir, exist_ok=True)
+os.makedirs(path_output, exist_ok=True)
+os.makedirs(path_matrices, exist_ok=True)
+os.makedirs(path_output_data, exist_ok=True)
 
 
 from mesh_1D import mesh_1D
@@ -234,15 +234,15 @@ print("cumulative flow= ", cumulative_flow)
 
 prob=hybrid_set_up(mesh, net, BC_type, BC_value,n,1, K, BCs_1D)
 #TRUE if no need to compute the matrices
-prob.phi_bar_bool=False
+prob.phi_bar_bool=True
 prob.B_assembly_bool=False
 prob.I_assembly_bool=False
 sol_linear_system=False
 #%%
-
-prob.AssemblyDEFFast(mat_path + "/E_portion", mat_path)
-prob.AssemblyGHI(mat_path)
-prob.AssemblyABC(mat_path)
+pdb.set_trace()
+prob.AssemblyDEFFast(path_matrices + "/E_portion", path_matrices + "/E_portion")
+prob.AssemblyGHI(path_matrices)
+prob.AssemblyABC(path_matrices)
 
 #%%
 #M_D=0.001
@@ -258,9 +258,9 @@ if not sol_linear_system:
     begin=time.time()
     sol=dir_solve(prob.Full_linear_matrix,-prob.Full_ind_array)
     end=time.time()
-    np.save(os.path.join(mat_path, 'sol'),sol)
+    np.save(os.path.join(path_matrices, 'sol'),sol)
 
-sol=np.load(os.path.join(mat_path, 'sol.npy'))
+sol=np.load(os.path.join(path_matrices, 'sol.npy'))
 prob.q=sol[-2*prob.S:-prob.S]
 prob.s=sol[:-prob.S]
 prob.Cv=sol[-prob.S:]
@@ -281,30 +281,30 @@ res=100
 corners_2D=np.array([[0.1,0.1],[0.1,0.9],[0.9,0.1],[0.9,0.9]])
 #%% - Seq
 aax=VisualizationTool(prob, 0,1,2, np.array([[10,10],[10,295],[295,10],[295,295]]), res)
-aax.GetPlaneData(out_data_dir)
+aax.GetPlaneData(path_output_data)
 #%% - Parallel
 # =============================================================================
 # %%time
 # aax=VisualizationTool(prob, 0,1,2, np.array([[10,10],[10,295],[295,10],[295,295]]), res)
-# aax.GetPlaneDataParallel(out_data_dir)
+# aax.GetPlaneDataParallel(path_output_data)
 # =============================================================================
 #%%
 #%%
 aay=VisualizationTool(prob, 1,0,2, np.array([[10,10],[10,295],[295,10],[295,295]]), res)
-aay.GetPlaneData(out_data_dir)
+aay.GetPlaneData(path_output_data)
 
 aaz=VisualizationTool(prob, 2,1,0, np.array([[10,10],[10,295],[295,10],[295,295]]), res)
-aaz.GetPlaneData(out_data_dir)
+aaz.GetPlaneData(path_output_data)
 
 aax2=VisualizationTool(prob, 0,2,1, np.array([[10,10],[10,295],[295,10],[295,295]]), res)
-aax2.GetPlaneData(out_data_dir)
+aax2.GetPlaneData(path_output_data)
 
 #%%
-aax.PlotData(out_data_dir)
-aay.PlotData(out_data_dir)
-aaz.PlotData(out_data_dir)
+aax.PlotData(path_output_data)
+aay.PlotData(path_output_data)
+aaz.PlotData(path_output_data)
 
-aax2.PlotData(out_data_dir)
+aax2.PlotData(path_output_data)
 
 
 

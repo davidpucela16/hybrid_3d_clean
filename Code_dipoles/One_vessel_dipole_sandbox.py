@@ -11,10 +11,10 @@ path=os.path.dirname(__file__)
 os.chdir(path)
 from Potentials_module import Classic
 from Potentials_module import Gjerde
-path_src=os.path.join(path, '../')
+path_src=os.path.join(path, '../src_final')
 os.chdir(path_src)
 
-
+kk_path='/home/pdavid/Bureau/Code/BMF_Code/kk'
 
 import numpy as np
 
@@ -48,12 +48,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import math
-from assembly_1D import FullAdvectionDiffusion1D
+
 from mesh_1D import mesh_1D
-from Green import GetSourcePotential
+from GreenFast import GetSourcePotential
 import pdb
 
-from hybridFast import hybrid_set_up, Visualization3D
+from hybridFast import hybrid_set_up
 
 from neighbourhood import GetNeighbourhood, GetUncommon
 
@@ -63,7 +63,7 @@ BC_type=np.array(["Neumann", "Neumann", "Neumann","Neumann","Neumann","Neumann"]
 BC_type=np.array(["Dirichlet", "Dirichlet","Neumann","Neumann", "Dirichlet","Dirichlet"])
 BC_value=np.array([0,0,0,0,0,0])
 L_vessel=240
-cells_3D=5
+cells_3D=20
 n=20
 L_3D=np.array([L_vessel, 3*L_vessel, L_vessel])
 mesh=cart_mesh_3D(L_3D,cells_3D)
@@ -78,7 +78,7 @@ D = 1
 K=np.array([0.0001,1,0.0001])
 
 U = np.array([2,2,2])/L_vessel
-alpha=10
+alpha=20
 R_vessel=L_vessel/alpha
 R_1D=np.zeros(3)+R_vessel
 
@@ -94,12 +94,12 @@ vertex_to_edge=[[0],[0,1], [1,2], [2]]
 diameters=np.array([2*R_vessel, 2*R_vessel, 2*R_vessel])
 
 cells_per_vessel=100
-h=np.zeros(3)+L_vessel/cells_per_vessel
+h=L_vessel/cells_per_vessel
 
 net=mesh_1D(startVertex, endVertex, vertex_to_edge ,pos_vertex, diameters, h,1)
 net.U=U
 net.D=D
-net.PositionalArrays(mesh)
+net.PositionalArraysFast(mesh)
 
 BCs_1D=np.array([[0,1],
                  [3,0]])
@@ -107,7 +107,7 @@ BCs_1D=np.array([[0,1],
 prob=hybrid_set_up(mesh, net, BC_type, BC_value,n,1, np.zeros(len(diameters))+K, BCs_1D)
 mesh.GetOrderedConnectivityMatrix()
 
-prob.AssemblyI()
+prob.AssemblyI(kk_path)
 
 
 tot_cell=cells_per_vessel*len(startVertex)
@@ -127,10 +127,10 @@ plt.show()
 Cv=np.ones(3*cells_per_vessel)
 #Cv=np.concatenate((np.ones(cells_per_vessel), np.arange(cells_per_vessel)[::-1]/cells_per_vessel, np.zeros(cells_per_vessel)))
 
-prob.AssemblyDEF()
-prob.AssemblyABC()
+prob.AssemblyDEFFast(kk_path, kk_path)
+prob.AssemblyABC(kk_path)
 Lin_matrix_1D=sp.sparse.vstack((sp.sparse.hstack((prob.A_matrix, prob.B_matrix)), 
-                             sp.sparse.hstack((prob.D_matrix, prob.E_matrix))))
+                             sp.sparse.hstack((prob.D_matrix, prob.q_portion+prob.Gij))))
 
 b=np.concatenate((-prob.I_ind_array, np.zeros(len(net.pos_s)) - prob.F_matrix.dot(Cv)))
 
@@ -147,7 +147,7 @@ P=Classic(3*L_vessel, R_vessel)
 G_ij=P.get_single_layer_vessel(len(net.pos_s))/2/np.pi/R_vessel
 #The factor 2*np.pi*R_vessel arises because we consider q as the total flux and not the point gradient of concentration
 
-new_E_matrix=G_ij+prob.Permeability
+new_E_matrix=G_ij+prob.q_portion
 
 Lin_matrix_2D=sp.sparse.vstack((sp.sparse.hstack((prob.A_matrix, prob.B_matrix)), 
                              sp.sparse.hstack((prob.D_matrix, new_E_matrix))))
@@ -173,7 +173,7 @@ plt.show()
 
 #%% - Manual analytical self-influence
 from Potentials_module import Gjerde
-from Green import GetSelfInfluence, LogLine
+from GreenFast import GetSelfInfluence, LogLine
 factor=1
 C=Classic(3*L_vessel/len(net.pos_s)*factor, R_vessel*factor)
 G_ii_matrix=C.get_single_layer_vessel(200)
@@ -232,9 +232,6 @@ plt.legend()
 plt.show()
 
 
-
-
-#%%
 
 
 

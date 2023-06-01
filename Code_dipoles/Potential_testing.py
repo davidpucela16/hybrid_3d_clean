@@ -13,7 +13,7 @@ import pdb
 
 from Potentials_module import Classic, Alternatives, Gjerde, Fleischman
 #%% Fleischman vs Gjerde:
-cells=1000
+cells=1100
 L=20
 R=1
 h=L/cells
@@ -32,12 +32,17 @@ for i in x:
                             x_i+np.array([h/2,0,0]),
                             R))
 
-plt.plot(x,Fl, label='Fl')
-plt.plot(x,Gj/h, label='Gj')
+
 
 a = Classic(L, R)
 exact=a.get_single_layer_point(cells, 1/2)
-plt.plot(a.x,exact/h, label='exact' )
+plt.plot(x,Fl, label='Point source')
+plt.plot(x,Gj/h, label='Line source')
+plt.plot(a.x,exact/h, label='Exact')
+plt.legend()
+plt.show()
+
+
 
 cells=int(cells/100)
 h=L/cells
@@ -52,16 +57,18 @@ for i in x:
                             x_i-np.array([h/2,0,0]),
                             x_i+np.array([h/2,0,0]),
                             R))
-
-plt.plot(x,Fl, label='Fl - coarse')
-plt.plot(x,Gj/h, label='Gj - coarse')
+a = Classic(L, R)
+exact=a.get_single_layer_point(cells, 1/2)
+plt.plot(x,Fl, label='Point')
+plt.plot(x,Gj/h, label='Line')
+plt.plot(a.x,exact/h, label='Exact')
 a = Classic(L, R)
 exact_coarse=a.get_single_layer_point(cells, 1/2)
 #plt.plot(a.x,exact_coarse/h, label='exact_coarse' )
 
 
 plt.legend()
-plt.title("Comparison Fleischman vs Gjerde")
+plt.title("Comparison Point vs Line")
 plt.show()
 
 

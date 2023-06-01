@@ -172,77 +172,21 @@ class VisualizationTool():
                                                                 prob.mesh_3D.h,prob.mesh_3D.pos_cells,prob.mesh_1D.s_blocks, 
                                                                 prob.mesh_1D.source_edge,prob.mesh_1D.tau, prob.mesh_1D.pos_s, prob.mesh_1D.h, 
                                                                 prob.R, 1, prob.s, prob.q))
-                np.save(os.path.join(path, "phi_1D_{}={}_{}".format(dirs[perp_axis], int(x), dirs[i_axis])),phi_1D)
-                np.save(os.path.join(path, "coordinates_{}={}_{}".format(dirs[perp_axis], int(x), dirs[i_axis])),crds_1D)
-# =============================================================================
-#             phi_1D_full.append(np.array(phi_1D))
-#             phi_extra.append(phi_extra_rec)
-#             full_field.append(phi_intra_rec)
-#             coordinates.append(crds_1D)
-#         
-#         self.phi_extra=phi_extra
-#         self.phi_1D_full=phi_1D_full
-#         self.coordinates=coordinates
-#         self.full_field=full_field
-# =============================================================================
+                np.save(os.path.join(path, "phi_1D_{}={}_{}".format(dirs[perp_axis], int(x*100), dirs[i_axis])),phi_1D)
+                np.save(os.path.join(path, "coordinates_{}={}_{}".format(dirs[perp_axis], int(x*100), dirs[i_axis])),crds_1D)
+
     def GetVolumeData(self, chunks, process, perp_axis_res, path):
+        os.makedirs(path, exist_ok=True)
         self.line_data=0
-        L_perp=self.prob.mesh_3D[self.perp_axis]
-        perp_disc=np.linspace(0,L_perp(1-1/perp_axis_res), perp_axis_res)+1/(2*perp_axis_res)
-        chunk_size=int(perp_axis_res/chunks)
+        L_perp=self.prob.mesh_3D.L[self.perp_axis]
+        perp_disc=np.linspace(0,L_perp*(1-1/perp_axis_res), perp_axis_res)+1/(2*perp_axis_res)
+        chunk_size=int(np.ceil(perp_axis_res/chunks))
         initial_chunk=process*chunk_size
         disc_local=perp_disc[initial_chunk:initial_chunk+chunk_size]
         
-        self.pos_array=disc_local 
+        self.pos_array=disc_local/L_perp
         self.GetPlaneData(path)
          
-# =============================================================================
-#     def GetPlaneDataParallel(self, path):
-#         prob, resolution=self.prob, self.resolution
-#         perp_axis, i_axis, j_axis=self.perp_axis,self.i_axis, self.j_axis
-#         corners_2D=self.corners_2D
-#         L_3D=prob.mesh_3D.L       
-#         cluster = LocalCluster(n_workers=4)  # Create a Dask cluster with 10 workers
-#         client = Client(cluster)  # Connect to the Dask cluster
-#         dirs=np.array(["x","y","z"])
-#         pos_array=self.pos_array
-#         kk=[]
-#         phi_1D_full=[]
-#         corners_3D=np.zeros((4,3))
-#         for x in pos_array*prob.mesh_3D.L[perp_axis]:
-#             corners_3D[:,perp_axis]=x
-#             corners_3D[:,i_axis]=corners_2D[:,0]
-#             corners_3D[:,j_axis]=corners_2D[:,1]
-#             
-#             kk.append(delayed(GetPlaneReconstructionFast)(x, perp_axis, i_axis, j_axis,corners_3D , resolution, prob, prob.Cv, path))
-#             #To get the coordinates of the 1D line in whqt axis?
-#             crds_1D=GetCoordsPlane(corners_3D, resolution).reshape(resolution, resolution,3)[np.array(pos_array*resolution,dtype=np.int32)]
-#             
-#             phi_1D=[]
-#             for i in range(len(pos_array)):
-#                 phi_1D.append(ReconstructionCoordinatesFast(crds_1D[i], prob.n, prob.mesh_3D.cells_x, prob.mesh_3D.cells_y,prob.mesh_3D.cells_z, 
-#                                                             prob.mesh_3D.h,prob.mesh_3D.pos_cells,prob.mesh_1D.s_blocks, 
-#                                                             prob.mesh_1D.source_edge,prob.mesh_1D.tau, prob.mesh_1D.pos_s, prob.mesh_1D.h, 
-#                                                             prob.R, 1, prob.s, prob.q))
-#                 
-#             phi_1D_full.append(np.array(phi_1D))
-#             np.save(os.path.join(path, "phi_1D_{}={}_{}".format(dirs[perp_axis], int(x), dirs[i_axis])),phi_1D)
-#             np.save(os.path.join(path, "coordinates_{}={}_{}".format(dirs[perp_axis], int(x), dirs[i_axis])),crds_1D)
-#             
-#         dask.compute(*kk)
-#         client.close()
-# # =============================================================================
-# #         self.phi_extra=[]
-# #         self.full_field=[]
-# #         self.coordinates=[]
-# #         for i in range(len(pos_array)):
-# #             self.phi_extra.append(kk[i][3])
-# #             self.full_field.append(kk[i][0])
-# #             self.coordinates.append(kk[i][4])
-# # =============================================================================
-#         
-#         #self.phi_1D_full=phi_1D_full
-# =============================================================================
     
     def PlotData(self, path):
         dirs=np.array(["x","y","z"])

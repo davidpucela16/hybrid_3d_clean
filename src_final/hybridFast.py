@@ -192,43 +192,45 @@ class hybrid_set_up():
             
         return(B)
     
-    def AssemblyDEF(self):
-        """Deprecated, use the fast version instead"""
-        print()
-        print("Deprecated, use the fast version instead")
-        print()
-        D=np.zeros([3,0])
-        E=np.zeros([3,0])
-        F=np.zeros([3,0])
-        
-        #The following are important matrices that are interesting to keep separated
-        #Afterwards they can be used to assemble the D, E, F matrices
-        G_ij=np.zeros([3,0])
-        #H_ij=np.zeros([3,0])
-        Permeability=np.zeros([3,0])
-        
-        for j in range(len(self.mesh_1D.s_blocks)):
-            print("Assembling D_E_F slow, source: ", j)
-            kernel_s,col_s,kernel_q, col_q=self.Interpolate(self.mesh_1D.pos_s[j])
-            D=AppendSparse(D, kernel_s,np.zeros(len(col_s))+j, col_s)
-            E=AppendSparse(E, kernel_q,np.zeros(len(col_q))+j, col_q)
-            
-            G_ij=AppendSparse(G_ij, kernel_q,np.zeros(len(col_q))+j, col_q)
-            
-            
-            E=AppendSparse(E, 1/self.K[self.mesh_1D.source_edge[j]] , j, j)
-            Permeability=AppendSparse(Permeability, 1/self.K[self.mesh_1D.source_edge[j]] , j, j)
-        F=AppendSparse(F, -np.ones(len(self.mesh_1D.s_blocks)) , np.arange(len(self.mesh_1D.s_blocks)), np.arange(len(self.mesh_1D.s_blocks)))
-            
-        self.D_matrix_slow=csc_matrix((D[0], (D[1], D[2])), shape=(len(self.mesh_1D.pos_s), self.mesh_3D.size_mesh))
-        self.E_matrix_slow=csc_matrix((E[0], (E[1], E[2])), shape=(len(self.mesh_1D.pos_s), len(self.mesh_1D.pos_s)))
-        self.F_matrix_slow=csc_matrix((F[0], (F[1], F[2])), shape=(len(self.mesh_1D.pos_s), len(self.mesh_1D.pos_s)))
-        
-        self.G_ij_slow=csc_matrix((G_ij[0], (G_ij[1], G_ij[2])), shape=(len(self.mesh_1D.pos_s), len(self.mesh_1D.pos_s)))
-        #self.H_ij=csc_matrix((H_ij[0], (H_ij[1], H_ij[2])), shape=(len(self.mesh_1D.pos_s), len(self.mesh_1D.pos_s)))
-        self.Permeability=csc_matrix((Permeability[0], (Permeability[1], Permeability[2])), shape=(len(self.mesh_1D.pos_s), len(self.mesh_1D.pos_s)))
-        
-        return sp.sparse.hstack((self.D_matrix_slow, self.E_matrix_slow, self.F_matrix_slow))
+# =============================================================================
+#     def AssemblyDEF(self):
+#         """Deprecated, use the fast version instead"""
+#         print()
+#         print("Deprecated, use the fast version instead")
+#         print()
+#         D=np.zeros([3,0])
+#         E=np.zeros([3,0])
+#         F=np.zeros([3,0])
+#         
+#         #The following are important matrices that are interesting to keep separated
+#         #Afterwards they can be used to assemble the D, E, F matrices
+#         G_ij=np.zeros([3,0])
+#         #H_ij=np.zeros([3,0])
+#         Permeability=np.zeros([3,0])
+#         
+#         for j in range(len(self.mesh_1D.s_blocks)):
+#             print("Assembling D_E_F slow, source: ", j)
+#             kernel_s,col_s,kernel_q, col_q=self.Interpolate(self.mesh_1D.pos_s[j])
+#             D=AppendSparse(D, kernel_s,np.zeros(len(col_s))+j, col_s)
+#             E=AppendSparse(E, kernel_q,np.zeros(len(col_q))+j, col_q)
+#             
+#             G_ij=AppendSparse(G_ij, kernel_q,np.zeros(len(col_q))+j, col_q)
+#             
+#             
+#             E=AppendSparse(E, 1/self.K[self.mesh_1D.source_edge[j]] , j, j)
+#             Permeability=AppendSparse(Permeability, 1/self.K[self.mesh_1D.source_edge[j]] , j, j)
+#         F=AppendSparse(F, -np.ones(len(self.mesh_1D.s_blocks)) , np.arange(len(self.mesh_1D.s_blocks)), np.arange(len(self.mesh_1D.s_blocks)))
+#             
+#         self.D_matrix_slow=csc_matrix((D[0], (D[1], D[2])), shape=(len(self.mesh_1D.pos_s), self.mesh_3D.size_mesh))
+#         self.E_matrix_slow=csc_matrix((E[0], (E[1], E[2])), shape=(len(self.mesh_1D.pos_s), len(self.mesh_1D.pos_s)))
+#         self.F_matrix_slow=csc_matrix((F[0], (F[1], F[2])), shape=(len(self.mesh_1D.pos_s), len(self.mesh_1D.pos_s)))
+#         
+#         self.G_ij_slow=csc_matrix((G_ij[0], (G_ij[1], G_ij[2])), shape=(len(self.mesh_1D.pos_s), len(self.mesh_1D.pos_s)))
+#         #self.H_ij=csc_matrix((H_ij[0], (H_ij[1], H_ij[2])), shape=(len(self.mesh_1D.pos_s), len(self.mesh_1D.pos_s)))
+#         self.Permeability=csc_matrix((Permeability[0], (Permeability[1], Permeability[2])), shape=(len(self.mesh_1D.pos_s), len(self.mesh_1D.pos_s)))
+#         
+#         return sp.sparse.hstack((self.D_matrix_slow, self.E_matrix_slow, self.F_matrix_slow))
+# =============================================================================
     
     def AssemblyDEFFast(self, path_phi_bar, mat_path):
         if self.phi_bar_bool:
@@ -254,6 +256,9 @@ class hybrid_set_up():
         self.D_E_F_matrix=sp.sparse.hstack((self.D_matrix, self.D_E_F_matrix))
         
         return self.D_E_F_matrix
+    
+    def GetEMatrix(self):
+        return self.q_portion+self.Gij
         
 # =============================================================================
 #     def InterpolatePhiFullFast(self, path, num_processes):

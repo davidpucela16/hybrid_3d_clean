@@ -8,11 +8,12 @@ Created on Fri Apr 28 18:52:07 2023
 
 import os 
 path=os.path.dirname(__file__)
+path_matrices='/home/pdavid/Bureau/Code/BMF_Code/Analysis_dipoles'
 os.chdir(path)
 from Potentials_module import Classic
 from Potentials_module import Gjerde
 path_src=os.path.join(path, '../src_final')
-path_figures=os.path.join(path, "/figures")
+path_figures=os.path.join(path_matrices, "figures")
 import sys 
 sys.path.append(path_src)
 
@@ -60,13 +61,13 @@ import copy
 
 
 BC_type=np.array(["Neumann", "Neumann", "Neumann","Neumann","Neumann","Neumann"])
-BC_type=np.array(["Dirichlet", "Dirichlet","Neumann","Neumann", "Dirichlet","Dirichlet"])
+#BC_type=np.array(["Dirichlet", "Dirichlet","Neumann","Neumann", "Dirichlet","Dirichlet"])
 BC_value=np.array([0,0,0,0,0,0])
 L_vessel=240
 cells_3D=5
-n=20
+n=int(cells_3D/4)
 L_3D=np.array([L_vessel, 3*L_vessel, L_vessel])
-mesh=cart_mesh_3D(L_3D,cells_3D, np.array([0,0,0]))
+mesh=cart_mesh_3D(L_3D,cells_3D)
 
 mesh.AssemblyBoundaryVectors()
 
@@ -98,11 +99,15 @@ diameters=np.array([2*R_vessel, 2*R_vessel, 2*R_vessel])
 
 
 #%%
-for alpha in np.array([10,20,50,100]):
+alpha=10
+for M in np.array([0.1,0.3,0.7,0.9,1.1,1.3])/1.2e5:
     for k in np.array([1,2,5,10,15,20,25]):
         for l in np.array([1,2,5,10,15,20,25]):
             
+            R_vessel=L_vessel/alpha
+            diameters=np.array([2*R_vessel, 2*R_vessel, 2*R_vessel])
             U = np.array([1,1,1])*5*l/L_vessel
+            #Assign the current value of the permeability (Dahmkoler membrane)
             K=np.array([0.0001,k,0.0001])
             
             cells_per_vessel_fine=100
@@ -110,7 +115,7 @@ for alpha in np.array([10,20,50,100]):
             
             h_fine=L_vessel/cells_per_vessel_fine
             h_coarse=L_vessel/cells_per_vessel_coarse
-            
+            #Create 1D objects
             net_fine=mesh_1D(startVertex, endVertex, vertex_to_edge ,pos_vertex, diameters, h_fine,1)
             net_fine.U=U
             net_fine.D=D
@@ -126,12 +131,15 @@ for alpha in np.array([10,20,50,100]):
             
             prob_fine=hybrid_set_up(mesh, net_fine, BC_type, BC_value,n,1, np.zeros(len(diameters))+K, BCs_1D)
             #mesh.GetOrderedConnectivityMatrix()
+            ###################################################################
+            # FINE PROBLEM
+            ####################################################################
+            prob_fine.AssemblyProblem(os.path.join(path_matrices, "matrices_fine"))
             
-            prob_fine.AssemblyProblem(os.path.join(path, "matrices_fine"))
+            prob_fine.Full_ind_array[:cells_3D**3]-=M*mesh.h**3
             prob_fine.SolveProblem()
             q_line_fine=prob_fine.q.copy()
             Cv_line_fine=prob_fine.Cv.copy()
-            
             
             P=Classic(3*L_vessel, R_vessel)
             
@@ -143,7 +151,7 @@ for alpha in np.array([10,20,50,100]):
             H_ij=P.get_double_layer_vessel(len(net_fine.pos_s))
             
             F_matrix_line=prob_fine.F_matrix.copy()
-            E_matrix_line=prob_fine.q_portion + prob_fine.Gij
+            E_matrix_line=prob_fine.GetEMatrix()
             
             F_matrix_cyl=prob_fine.F_matrix+H_ij
             E_matrix_cyl=new_E_matrix-H_ij*1/K[net_fine.source_edge]
@@ -158,18 +166,21 @@ for alpha in np.array([10,20,50,100]):
             Cv_cyl_fine=sol_cyl[-prob_fine.S:]
             
             
-            
             plt.plot(q_cyl_fine, label='q_cyl')
             plt.plot(q_line_fine, label='q_line')
             plt.legend()
             plt.show()
             
+            ###################################################################
+            # FINE PROBLEM
+            ####################################################################
             P=Classic(3*L_vessel, R_vessel)
             G_ij_coarse=P.get_single_layer_vessel_coarse(30, 10)/2/np.pi/R_vessel
             #The factor 2*np.pi*R_vessel arises because we consider q as the total flux and not the point gradient of concentration
             
             prob_coarse=hybrid_set_up(mesh, net_coarse, BC_type, BC_value,n,1, np.zeros(len(diameters))+K, BCs_1D)
-            prob_coarse.AssemblyProblem("matrices_coarse")
+            prob_coarse.AssemblyProblem(os.path.join(path_matrices, "matrices_coarse"))
+            prob_coarse.Full_ind_array[:cells_3D**3]-=M*mesh.h**3
             prob_coarse.SolveProblem()
             q_line_coarse=prob_coarse.q.copy()
             Cv_line_coarse=prob_coarse.Cv.copy()
@@ -180,7 +191,7 @@ for alpha in np.array([10,20,50,100]):
             H_ij_coarse=P.get_double_layer_vessel_coarse(len(net_coarse.pos_s), 10)
             
             F_matrix_line=prob_coarse.F_matrix.copy()
-            E_matrix_line=prob_coarse.E_matrix.copy()
+            E_matrix_line=prob_coarse.GetEMatrix()
             
             # =============================================================================
             # F_matrix_cyl=prob_coarse.F_matrix+H_ij_coarse
@@ -199,14 +210,12 @@ for alpha in np.array([10,20,50,100]):
             q_cyl_coarse=sol_cyl[-prob_coarse.S*2:-prob_coarse.S]
             Cv_cyl_coarse=sol_cyl[-prob_coarse.S:]
             
-            
-            
             plt.plot(net_coarse.pos_s[:,1],q_cyl_coarse, label='q_cyl')
             plt.plot(net_coarse.pos_s[:,1],q_line_coarse, label='q_line')
             plt.plot(net_fine.pos_s[:,1],q_cyl_fine, label='exact')
             plt.legend()
-            plt.title("q for Pe={}, Da_m={} and L/R={}".format(np.around(U[1]*L_vessel, decimals=2), np.around(K[1]*alpha/2/np.pi, decimals=2), alpha))
-            plt.savefig(path_figures+"/Pe={}_Da_m={}_LdivR={}.pdf".format(int(U[1]*L_vessel), int(K[1]*alpha/2/np.pi), alpha))
+            plt.title("q for Pe={}, Da_m={} and M={}".format(np.around(U[1]*L_vessel, decimals=2), np.around(K[1]*alpha/2/np.pi, decimals=2),int(M*1.2e6)))
+            plt.savefig(path_figures+"/Pe={}_Da_m={}_M={}.pdf".format(int(U[1]*L_vessel), int(K[1]*alpha/2/np.pi), int(M*1.2e6)))
             plt.show()
 
 
