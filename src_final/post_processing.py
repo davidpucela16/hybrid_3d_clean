@@ -352,8 +352,8 @@ def GetPlaneReconstructionFast(plane_coord,plane_axis, i_axis, j_axis,corners, r
     phi_final[new_mask]=result[new_mask]
     if save:
         dirs=np.array(["x","y","z"])
-        np.save(os.path.join(save[0], 'phi_intra_{}={:.4g}_{}_{}'.format(dirs[plane_axis], int(plane_coord), dirs[i_axis], dirs[j_axis])),phi_final)
-        np.save(os.path.join(save[0], 'phi_extra_{}={:.4g}_{}_{}'.format(dirs[plane_axis], int(plane_coord), dirs[i_axis], dirs[j_axis])), phi_2)
+        np.save(os.path.join(save[0], 'phi_intra_{}={:04g}_{}_{}'.format(dirs[plane_axis], int(plane_coord), dirs[i_axis], dirs[j_axis])),phi_final)
+        np.save(os.path.join(save[0], 'phi_extra_{}={:04g}_{}_{}'.format(dirs[plane_axis], int(plane_coord), dirs[i_axis], dirs[j_axis])), phi_2)
         #np.save(os.path.join(save[0], 'crds_{}={}_{}_{}'.format(dirs[plane_axis], int(plane_coord), dirs[i_axis], dirs[j_axis])), crds)
     
     return  phi_final,result,mask, phi_2, crds
