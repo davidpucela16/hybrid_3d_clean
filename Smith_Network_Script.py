@@ -41,8 +41,8 @@ gradient="x"
 
 #path_output="/home/pdavid/Bureau/Code/hybrid3d/Synthetic_Rea{}".format(Network)
 path_output=os.path.join(path_script, "../Synthetic_Rea{}".format(Network))
-cells_3D=5
-n=1
+cells_3D=10
+n=3
 #Directory to save the assembled matrices and solution
 path_matrices=os.path.join(path_output,"F{}_n{}".format(cells_3D, n))
 #Directory to save the divided fiiles of the network
@@ -61,6 +61,12 @@ os.makedirs(path_output, exist_ok=True)
 os.makedirs(path_matrices, exist_ok=True)
 path_output_data=os.path.join(path_matrices, gradient)
 os.makedirs(path_output_data, exist_ok=True)
+os.makedirs(os.path.join(path_matrices, "E_portion"), exist_ok=True)
+
+phi_bar_bool=False
+B_assembly_bool=False
+I_assembly_bool=False
+Computation_bool=False
 
 sys.path.append(os.path.join(path_script, "src_final"))
 from mesh_1D import mesh_1D
@@ -70,7 +76,7 @@ from post_processing import GetPlaneReconstructionFast
 from assembly_1D import AssembleVertexToEdge, PreProcessingNetwork, CheckLocalConservativenessFlowRate, CheckLocalConservativenessVelocity
 from PrePostTemp import SplitFile, SetArtificialBCs, ClassifyVertices, get_phi_bar, Get9Lines, VisualizationTool
 
-output_files = SplitFile(filename, output_dir_network)
+if Computation_bool: output_files = SplitFile(filename, output_dir_network)
 
 print("Split files:")
 for file in output_files:
@@ -178,19 +184,15 @@ print("cumulative flow= ", cumulative_flow)
 #%%
 prob=hybrid_set_up(mesh, net, BC_type, BC_value,n,1, K, BCs_1D)
 #TRUE if no need to compute the matrices
-prob.phi_bar_bool=True
-prob.B_assembly_bool=True
-prob.I_assembly_bool=True
-sol_linear_system=True
+prob.phi_bar_bool=phi_bar_bool
+prob.B_assembly_bool=B_assembly_bool
+prob.I_assembly_bool=I_assembly_bool
+sol_linear_system=Computation_bool
 
 #%%
 
 import time
 if not sol_linear_system:
-    begin=time.time()
-    sol=dir_solve(prob.Full_linear_matrix,-prob.Full_ind_array)
-    end=time.time()
-    np.save(os.path.join(path_output_data, 'sol'),sol)
     prob.AssemblyProblem(path_matrices)
     #M_D=0.001
     M_D=0.0002
@@ -198,6 +200,10 @@ if not sol_linear_system:
     CMRO2=Real_diff * M_D
     prob.Full_ind_array[:cells_3D**2]-=M_D*mesh.h**3
     print("If all BCs are newton the sum of all coefficients divided by the length of the network should be close to 1", np.sum(prob.B_matrix.toarray())/np.sum(net.L))
+    begin=time.time()
+    sol=dir_solve(prob.Full_linear_matrix,-prob.Full_ind_array)
+    end=time.time()
+    np.save(os.path.join(path_output_data, 'sol'),sol)
 
 sol=np.load(os.path.join(path_output_data, 'sol.npy'))
 prob.q=sol[-2*prob.S:-prob.S]
@@ -218,15 +224,15 @@ res=50
 simple_plotting=False
 if simple_plotting:    
     
-    aax=VisualizationTool(prob, 0,1,2, np.array([[10,10],[10,295],[295,10],[295,295]]), res)
+    aax=VisualizationTool(prob, 0,1,2, np.array([[16,16],[16,289],[289,16],[289,289]]), res)
     aax.GetPlaneData(path_output_data)
-    aay=VisualizationTool(prob, 1,0,2, np.array([[10,10],[10,295],[295,10],[295,295]]), res)
+    aay=VisualizationTool(prob, 1,0,2, np.array([[16,16],[16,289],[289,16],[289,289]]), res)
     aay.GetPlaneData(path_output_data)
     
-    aaz=VisualizationTool(prob, 2,1,0, np.array([[10,10],[10,295],[295,10],[295,295]]), res)
+    aaz=VisualizationTool(prob, 2,1,0, np.array([[16,16],[16,289],[289,16],[289,289]]), res)
     aaz.GetPlaneData(path_output_data)
     
-    aax2=VisualizationTool(prob, 0,2,1, np.array([[10,10],[10,295],[295,10],[295,295]]), res)
+    aax2=VisualizationTool(prob, 0,2,1, np.array([[16,16],[16,289],[289,16],[289,289]]), res)
     aax2.GetPlaneData(path_output_data)
     
     aax.PlotData(path_output_data)
@@ -236,10 +242,10 @@ if simple_plotting:
     aax2.PlotData(path_output_data)
 
 
-num_processes=8
+num_processes=20
 process=0 #This must be kept to zero for the parallel reconstruction to go right
-perp_axis_res=100
+perp_axis_res=50
 path_vol_data=os.path.join(path_output_data, "vol_data")
-aaz=VisualizationTool(prob, 2,1,0, np.array([[10,10],[10,295],[295,10],[295,295]]), res)
+aaz=VisualizationTool(prob, 2,1,0, np.array([[16,16],[16,289],[289,16],[289,289]]), res)
 aaz.GetVolumeData(num_processes, process, perp_axis_res, path_vol_data)
 

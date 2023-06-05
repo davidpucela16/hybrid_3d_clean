@@ -36,6 +36,9 @@ from numba import int64, float64
 from numba import int64, types, typed
 import numba as nb
 
+import shutil
+
+freq_kernel_change=30
 
 spec = [
     ('bound', int64[:]),               # a simple scalar field
@@ -276,7 +279,7 @@ def RetrievePhiBar(mat_path, phi_bar_path, S, size_mesh, uni_s_blocks):
         row_s=np.concatenate((row_s, list_of_kernels[1]))
         row_q=np.concatenate((row_q, list_of_kernels[4]))
 
-        if c%200==0:
+        if c%freq_kernel_change==0:
             phi_bar_s+=sp.sparse.csc_matrix((kernel_s,(row_s, col_s)), shape=(S, size_mesh))
             phi_bar_q+=sp.sparse.csc_matrix((kernel_q,(row_q, col_q)), shape=(S, S))
             kernel_q=np.zeros(0, dtype=np.float64)
@@ -295,6 +298,8 @@ def RetrievePhiBar(mat_path, phi_bar_path, S, size_mesh, uni_s_blocks):
             
             sp.sparse.save_npz(mat_path + '/phi_bar_s', phi_bar_s)
             sp.sparse.save_npz(mat_path + '/phi_bar_q', phi_bar_q)
+            shutil.rmtree(phi_bar_path)
+            print(f"Folder '{phi_bar_path}' deleted successfully.")
             
     return phi_bar_s, phi_bar_q
    

@@ -78,7 +78,7 @@ path_network = os.path.join(path_script, "..") #The path with the network
 sys.path.append(os.path.join(path_script, "src_final"))
 
 path_output=os.path.join(path_network, "Kleinfeld")
-cells_3D=10
+cells_3D=20
 n=1
 path_matrices=os.path.join(path_output,"F{}_n{}".format(cells_3D, n))
 #output_dir_network="/home/pdavid/Bureau/Code/hybrid3d/Synthetic_Rea{}/{}/divided_files".format(Network, gradient)
@@ -234,7 +234,7 @@ print("cumulative flow= ", cumulative_flow)
 
 prob=hybrid_set_up(mesh, net, BC_type, BC_value,n,1, K, BCs_1D)
 #TRUE if no need to compute the matrices
-prob.phi_bar_bool=True
+prob.phi_bar_bool=False
 prob.B_assembly_bool=False
 prob.I_assembly_bool=False
 sol_linear_system=False
