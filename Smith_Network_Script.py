@@ -244,7 +244,7 @@ if simple_plotting:
     aax2.PlotData(path_output_data)
 
 if rec_bool:
-    num_processes=10
+    num_processes=25
     process=0 #This must be kept to zero for the parallel reconstruction to go right
     perp_axis_res=50
     path_vol_data=os.path.join(path_output_data, "vol_data")
