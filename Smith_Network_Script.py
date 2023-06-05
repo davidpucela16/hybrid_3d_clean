@@ -63,10 +63,12 @@ path_output_data=os.path.join(path_matrices, gradient)
 os.makedirs(path_output_data, exist_ok=True)
 os.makedirs(os.path.join(path_matrices, "E_portion"), exist_ok=True)
 
-phi_bar_bool=False
+#True if need to compute 
+phi_bar_bool=True
 B_assembly_bool=False
 I_assembly_bool=False
-Computation_bool=False
+Computation_bool=True
+rec_bool=True
 
 sys.path.append(os.path.join(path_script, "src_final"))
 from mesh_1D import mesh_1D
@@ -76,11 +78,11 @@ from post_processing import GetPlaneReconstructionFast
 from assembly_1D import AssembleVertexToEdge, PreProcessingNetwork, CheckLocalConservativenessFlowRate, CheckLocalConservativenessVelocity
 from PrePostTemp import SplitFile, SetArtificialBCs, ClassifyVertices, get_phi_bar, Get9Lines, VisualizationTool
 
-if Computation_bool: output_files = SplitFile(filename, output_dir_network)
-
-print("Split files:")
-for file in output_files:
-    print(file)
+if not Computation_bool: 
+    output_files = SplitFile(filename, output_dir_network)
+    print("Split files:")
+    for file in output_files:
+        print(file)
 
 #%
 df = pd.read_csv(output_dir_network + '/output_0.txt', skiprows=1, sep="\s+", names=["x", "y", "z"])
@@ -241,11 +243,11 @@ if simple_plotting:
     
     aax2.PlotData(path_output_data)
 
-
-num_processes=20
-process=0 #This must be kept to zero for the parallel reconstruction to go right
-perp_axis_res=50
-path_vol_data=os.path.join(path_output_data, "vol_data")
-aaz=VisualizationTool(prob, 2,1,0, np.array([[16,16],[16,289],[289,16],[289,289]]), res)
-aaz.GetVolumeData(num_processes, process, perp_axis_res, path_vol_data)
+if rec_bool:
+    num_processes=10
+    process=0 #This must be kept to zero for the parallel reconstruction to go right
+    perp_axis_res=50
+    path_vol_data=os.path.join(path_output_data, "vol_data")
+    aaz=VisualizationTool(prob, 2,1,0, np.array([[16,16],[16,289],[289,16],[289,289]]), res)
+    aaz.GetVolumeData(num_processes, process, perp_axis_res, path_vol_data)
 

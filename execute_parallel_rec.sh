@@ -3,9 +3,10 @@
 # Read the value of num_scripts from Smith_Network_Script.py
 num_scripts=$(grep -oP 'num_processes=\K\d+' Smith_Network_Script.py)
 
-# Copy the base script rec_0.py to rec_$x.py
+sed -i 's/Computation_bool=False/Computation_bool=True/' Smith_Network_Script.py
+sed -i 's/rec_bool=False/rec_bool=True/' Smith_Network_Script.py
+
 cp Smith_Network_Script.py rec_0_backup.py
-sed -i 's/sol_linear_system=False/sol_linear_system=True/' Smith_Network_Script.py
 
 # Create an array to store the background process IDs
 declare -a pids
