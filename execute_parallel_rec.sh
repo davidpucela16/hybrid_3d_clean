@@ -31,5 +31,5 @@ rm rec_0_backup.py
 
 for ((x=0; x<num_scripts; x++)); do
     script="rec_3D_$x.py"
-    #rm "$script"
+    rm "$script"
 done
