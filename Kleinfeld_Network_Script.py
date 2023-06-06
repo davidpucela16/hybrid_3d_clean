@@ -266,7 +266,8 @@ if sol_linear_system:
     del(A_B_C)
     del(G_H_I)
     prob.Full_linear_matrix=prob.Full_linear_matrix.astype('float32')
-    sol=dir_solve(prob.Full_linear_matrix,-prob.Full_ind_array)
+    #sol=dir_solve(prob.Full_linear_matrix,-prob.Full_ind_array)
+    sol=sp.sparse.linalg.bicg(prob.Full_linear_matrix,-prob.Full_ind_array)
     np.save(os.path.join(path_output_data, 'sol'),sol)
 
 
