@@ -92,6 +92,12 @@ os.makedirs(path_output, exist_ok=True)
 os.makedirs(path_matrices, exist_ok=True)
 os.makedirs(path_output_data, exist_ok=True)
 
+#True if need to compute 
+phi_bar_bool=False
+B_assembly_bool=False
+I_assembly_bool=False
+Computation_bool=False
+rec_bool=True
 
 from mesh_1D import mesh_1D
 from hybridFast import hybrid_set_up
@@ -102,11 +108,11 @@ from PrePostTemp import SplitFile, SetArtificialBCs, ClassifyVertices, get_phi_b
 
 
 
-output_files = SplitFile(filename, output_dir_network)
-
-print("Split files:")
-for file in output_files:
-    print(file)
+if not Computation_bool: 
+    output_files = SplitFile(filename, output_dir_network)
+    print("Split files:")
+    for file in output_files:
+        print(file)
 
 #%%
 df = pd.read_csv(output_dir_network + '/output_0.txt', skiprows=1, sep="\s+", names=["x", "y", "z"])
@@ -234,45 +240,34 @@ print("cumulative flow= ", cumulative_flow)
 
 prob=hybrid_set_up(mesh, net, BC_type, BC_value,n,1, K, BCs_1D)
 #TRUE if no need to compute the matrices
-prob.phi_bar_bool=False
-prob.B_assembly_bool=False
-prob.I_assembly_bool=False
-sol_linear_system=False
-#%%
-pdb.set_trace()
-prob.AssemblyDEFFast(path_matrices + "/E_portion", path_matrices + "/E_portion")
-prob.AssemblyGHI(path_matrices)
-prob.AssemblyABC(path_matrices)
 
-#%%
-#M_D=0.001
-M_D=0.0002
-Real_diff=1.2e5 #\mu m^2 / min
-CMRO2=Real_diff * M_D
-prob.Full_ind_array[:cells_3D**2]-=M_D*mesh.h**3
-print("If all BCs are newton the sum of all coefficients divided by the length of the network should be close to 1", np.sum(prob.B_matrix.toarray())/np.sum(net.L))
-import time
-
+prob.phi_bar_bool=phi_bar_bool
+prob.B_assembly_bool=B_assembly_bool
+prob.I_assembly_bool=I_assembly_bool
+sol_linear_system=Computation_bool
 
 if not sol_linear_system:
-    begin=time.time()
+    D_E_F=prob.AssemblyDEFFast(path_matrices + "/E_portion", path_matrices)
+    A_B_C=prob.AssemblyABC(path_matrices)
+   
+    G_H_I=prob.AssemblyGHI(path_matrices)
+    prob.Full_linear_matrix=np.vstack((A_B_C,D_E_F,G_H_I))
+    
+    Full_ind_array=np.concatenate((prob.I_ind_array, np.zeros(len(prob.mesh_1D.pos_s)), prob.III_ind_array))
+    #M_D=0.001
+    M_D=0.0002
+    Real_diff=1.2e5 #\mu m^2 / min
+    CMRO2=Real_diff * M_D
+    prob.Full_ind_array[:cells_3D**2]-=M_D*mesh.h**3
+    print("If all BCs are newton the sum of all coefficients divided by the length of the network should be close to 1", np.sum(prob.B_matrix.toarray())/np.sum(net.L))
     sol=dir_solve(prob.Full_linear_matrix,-prob.Full_ind_array)
-    end=time.time()
-    np.save(os.path.join(path_matrices, 'sol'),sol)
+    np.save(os.path.join(path_output_data, 'sol'),sol)
+
 
 sol=np.load(os.path.join(path_matrices, 'sol.npy'))
 prob.q=sol[-2*prob.S:-prob.S]
 prob.s=sol[:-prob.S]
 prob.Cv=sol[-prob.S:]
-# =============================================================================
-# for i in range(3):
-#     phi,crds, others, points_a, points_b=Get9Lines(i, 200, L_3D, prob)
-#     for k in range(9):
-#         plt.plot(phi[k], label=str(np.array(["x","y","z"])[others]) + "={:.1f}, {:.1f}".format(points_a[k//3], points_b[k%3]))
-#     plt.xlabel(np.array(["x","y","z"])[i])
-#     plt.legend()
-#     plt.show()
-# =============================================================================
 
 #%%
 from PrePostTemp import VisualizationTool
