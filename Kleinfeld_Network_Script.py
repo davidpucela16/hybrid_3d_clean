@@ -78,7 +78,7 @@ path_network = os.path.join(path_script, "..") #The path with the network
 sys.path.append(os.path.join(path_script, "src_final"))
 
 path_output=os.path.join(path_network, "Kleinfeld")
-cells_3D=20
+cells_3D=30
 n=1
 path_matrices=os.path.join(path_output,"F{}_n{}".format(cells_3D, n))
 #output_dir_network="/home/pdavid/Bureau/Code/hybrid3d/Synthetic_Rea{}/{}/divided_files".format(Network, gradient)
@@ -249,7 +249,6 @@ sol_linear_system=Computation_bool
 if not sol_linear_system:
     D_E_F=prob.AssemblyDEFFast(path_matrices + "/E_portion", path_matrices)
     A_B_C=prob.AssemblyABC(path_matrices)
-   
     G_H_I=prob.AssemblyGHI(path_matrices)
     prob.Full_linear_matrix=np.vstack((A_B_C,D_E_F,G_H_I))
     

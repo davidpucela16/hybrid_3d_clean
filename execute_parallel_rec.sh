@@ -3,7 +3,7 @@
 # Read the value of num_scripts from Smith_Network_Script.py
 num_scripts=$(grep -oP 'num_processes=\K\d+' Smith_Network_Script.py)
 
-sed -i 's/Computation_bool=False/Computation_bool=True/' Smith_Network_Script.py
+sed -i 's/Computation_bool=True/Computation_bool=False/' Smith_Network_Script.py
 sed -i 's/rec_bool=False/rec_bool=True/' Smith_Network_Script.py
 
 cp Smith_Network_Script.py rec_0_backup.py
