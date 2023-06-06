@@ -207,10 +207,10 @@ def InterpolatePhiBarBlock(block,n, cells_x, cells_y, cells_z, h_3D,
     #I multiply by 50 as an estimation, maybe it should be increased
     size_arr=np.sum(quant[GetNeighbourhood(n, cells_x, cells_y, cells_z, block)]) #total amount of sources in the neighbourhood
     kernel_s_array=np.empty(len(s_blocks)*8, dtype=np.float64)
-    kernel_q_array=np.empty(size_arr*50*quant[block], dtype=np.float64)
+    kernel_q_array=np.empty(size_arr*80*quant[block], dtype=np.float64)
     
     col_s_array=np.empty(len(s_blocks)*8, dtype=np.int64)
-    col_q_array=np.empty(size_arr*50*quant[block], dtype=np.int64)
+    col_q_array=np.empty(size_arr*80*quant[block], dtype=np.int64)
     
     row_s_array=np.zeros(0, dtype=np.int64)
     row_q_array=np.zeros(0, dtype=np.int64)

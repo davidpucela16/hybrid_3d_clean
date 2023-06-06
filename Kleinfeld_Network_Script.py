@@ -78,7 +78,7 @@ path_network = os.path.join(path_script, "..") #The path with the network
 sys.path.append(os.path.join(path_script, "src_final"))
 
 path_output=os.path.join(path_network, "Kleinfeld")
-cells_3D=30
+cells_3D=20
 n=1
 path_matrices=os.path.join(path_output,"F{}_n{}".format(cells_3D, n))
 #output_dir_network="/home/pdavid/Bureau/Code/hybrid3d/Synthetic_Rea{}/{}/divided_files".format(Network, gradient)
@@ -92,11 +92,12 @@ os.makedirs(path_output, exist_ok=True)
 os.makedirs(path_matrices, exist_ok=True)
 os.makedirs(path_output_data, exist_ok=True)
 
-#True if need to compute 
-phi_bar_bool=False
-B_assembly_bool=False
-I_assembly_bool=False
-Computation_bool=False
+#True if no need to compute 
+phi_bar_bool=True
+B_assembly_bool=True
+I_assembly_bool=True
+#True if need to compute
+Computation_bool=True
 rec_bool=True
 
 from mesh_1D import mesh_1D
@@ -108,7 +109,7 @@ from PrePostTemp import SplitFile, SetArtificialBCs, ClassifyVertices, get_phi_b
 
 
 
-if not Computation_bool: 
+if Computation_bool: 
     output_files = SplitFile(filename, output_dir_network)
     print("Split files:")
     for file in output_files:
@@ -246,19 +247,25 @@ prob.B_assembly_bool=B_assembly_bool
 prob.I_assembly_bool=I_assembly_bool
 sol_linear_system=Computation_bool
 
-if not sol_linear_system:
+if sol_linear_system:
     D_E_F=prob.AssemblyDEFFast(path_matrices + "/E_portion", path_matrices)
     A_B_C=prob.AssemblyABC(path_matrices)
     G_H_I=prob.AssemblyGHI(path_matrices)
-    prob.Full_linear_matrix=np.vstack((A_B_C,D_E_F,G_H_I))
-    
-    Full_ind_array=np.concatenate((prob.I_ind_array, np.zeros(len(prob.mesh_1D.pos_s)), prob.III_ind_array))
+    prob.Full_linear_matrix=sp.sparse.vstack((A_B_C,D_E_F,G_H_I))
+    III_ind_array=np.load(os.path.join(path_matrices, 'III_ind_array.npy'))
+    Full_ind_array=np.concatenate((prob.I_ind_array, np.zeros(len(prob.mesh_1D.pos_s)), III_ind_array))
     #M_D=0.001
     M_D=0.0002
     Real_diff=1.2e5 #\mu m^2 / min
     CMRO2=Real_diff * M_D
+    prob.Full_ind_array=Full_ind_array
     prob.Full_ind_array[:cells_3D**2]-=M_D*mesh.h**3
     print("If all BCs are newton the sum of all coefficients divided by the length of the network should be close to 1", np.sum(prob.B_matrix.toarray())/np.sum(net.L))
+    pdb.set_trace()
+    del(D_E_F)
+    del(A_B_C)
+    del(G_H_I)
+    prob.Full_linear_matrix=prob.Full_linear_matrix.astype('float32')
     sol=dir_solve(prob.Full_linear_matrix,-prob.Full_ind_array)
     np.save(os.path.join(path_output_data, 'sol'),sol)
 
