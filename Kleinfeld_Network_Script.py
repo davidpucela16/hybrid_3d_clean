@@ -6,56 +6,6 @@ Created on Tue May 23 18:04:46 2023
 @author: pdavid
 """
 
-# =============================================================================
-# import os 
-# path_current_file=os.path.dirname(__file__)
-# path_network="/home/pdavid/Bureau/PhD/Network_Flo/All_files"
-# 
-# import pandas as pd
-# import numpy as np 
-# 
-# import pdb 
-# from numba import njit
-# 
-# import scipy as sp
-# from scipy.sparse.linalg import spsolve as dir_solve
-# 
-# import matplotlib.pyplot as plt
-# #%
-# import os
-# os.chdir('/home/pdavid/Bureau/Code/hybrid3d/src_final')
-# from mesh_1D import mesh_1D
-# from hybridFast import hybrid_set_up
-# from mesh import cart_mesh_3D
-# from post_processing import GetPlaneReconstructionFast
-# from assembly_1D import AssembleVertexToEdge, PreProcessingNetwork, CheckLocalConservativenessFlowRate, CheckLocalConservativenessVelocity
-# from PrePostTemp import SplitFile, SetArtificialBCs, ClassifyVertices, get_phi_bar, Get9Lines, VisualizationTool
-# 
-# Network=1
-# gradient="x"
-# 
-# #path_output="/home/pdavid/Bureau/Code/hybrid3d/Synthetic_Rea{}".format(Network)
-# path_output=os.path.join(path_current_file, "Kleinfeld")
-# cells_3D=10
-# n=2
-# path_matrices=os.path.join(path_output,"F{}_n{}".format(cells_3D, n))
-# output_dir_network="/home/pdavid/Bureau/Code/hybrid3d/Synthetic_Rea{}/{}/divided_files".format(Network, gradient)
-# filename=os.path.join(path_network,"Network1_Figure_Data.txt")
-# path_output_data=path_matrices + '/out_data'
-# 
-# 
-# #output_dir_network = '/home/pdavid/Bureau/PhD/Network_Flo/All_files/Split/'  # Specify the output directory here
-# os.makedirs(output_dir_network, exist_ok=True)  # Create the output directory if it doesn't exist
-# os.makedirs(path_output, exist_ok=True)
-# os.makedirs(path_matrices, exist_ok=True)
-# os.makedirs(path_output_data, exist_ok=True)
-# 
-# output_files = SplitFile(filename, output_dir_network)
-# 
-# print("Split files:")
-# for file in output_files:
-#     print(file)
-# =============================================================================
 import pandas as pd
 import numpy as np 
 import pdb 
@@ -78,8 +28,10 @@ path_network = os.path.join(path_script, "..") #The path with the network
 sys.path.append(os.path.join(path_script, "src_final"))
 
 path_output=os.path.join(path_network, "Kleinfeld")
-cells_3D=20
-n=1
+#cells_3D=20
+#n=1
+cells_3D, n = int(sys.argv[1]), int(sys.argv[2])
+print(cells_3D, n)
 path_matrices=os.path.join(path_output,"F{}_n{}".format(cells_3D, n))
 #output_dir_network="/home/pdavid/Bureau/Code/hybrid3d/Synthetic_Rea{}/{}/divided_files".format(Network, gradient)
 output_dir_network=os.path.join(path_network, "Kleinfeld_divided")
@@ -261,13 +213,17 @@ if sol_linear_system:
     prob.Full_ind_array=Full_ind_array
     prob.Full_ind_array[:cells_3D**2]-=M_D*mesh.h**3
     print("If all BCs are newton the sum of all coefficients divided by the length of the network should be close to 1", np.sum(prob.B_matrix.toarray())/np.sum(net.L))
-    pdb.set_trace()
+    print("Deleting matrices")
     del(D_E_F)
     del(A_B_C)
     del(G_H_I)
+    print("Converting matrix")
     prob.Full_linear_matrix=prob.Full_linear_matrix.astype('float32')
+    prob.Full_ind_array=prob.Full_ind_array.astype('float32')
     #sol=dir_solve(prob.Full_linear_matrix,-prob.Full_ind_array)
-    sol=sp.sparse.linalg.bicg(prob.Full_linear_matrix,-prob.Full_ind_array)
+    print("solve problem")
+    sol=sp.sparse.linalg.bicgstab(prob.Full_linear_matrix,-prob.Full_ind_array)
+    pdb.set_trace()
     np.save(os.path.join(path_output_data, 'sol'),sol)
 
 
