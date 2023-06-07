@@ -49,8 +49,8 @@ phi_bar_bool=os.path.exists(os.path.join(path_matrices, 'phi_bar_q.npz')) and os
 B_assembly_bool=os.path.exists(os.path.join(path_matrices, 'B_matrix.npz'))
 I_assembly_bool=os.path.exists(os.path.join(path_matrices, 'I_matrix.npz'))
 #True if need to compute
-#string_value = sys.argv[3]
 string_value=False
+#string_value = sys.argv[3]
 Computation_bool = False if string_value == 'False' else bool(string_value)
 rec_bool=True
 print("Computation: ", Computation_bool)
