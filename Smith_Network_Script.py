@@ -63,11 +63,12 @@ path_output_data=os.path.join(path_matrices, gradient)
 os.makedirs(path_output_data, exist_ok=True)
 os.makedirs(os.path.join(path_matrices, "E_portion"), exist_ok=True)
 
+#True if no need to compute
+phi_bar_bool=True
+B_assembly_bool=True
+I_assembly_bool=True
 #True if need to compute
-phi_bar_bool=False
-B_assembly_bool=False
-I_assembly_bool=False
-Computation_bool=False
+Computation_bool=True
 rec_bool=True
 
 sys.path.append(os.path.join(path_script, "src_final"))
@@ -203,7 +204,9 @@ if sol_linear_system:
     prob.Full_ind_array[:cells_3D**2]-=M_D*mesh.h**3
     print("If all BCs are newton the sum of all coefficients divided by the length of the network should be close to 1", np.sum(prob.B_matrix.toarray())/np.sum(net.L))
     begin=time.time()
-    sol=dir_solve(prob.Full_linear_matrix,-prob.Full_ind_array)
+    pdb.set_trace()
+    #sol=dir_solve(prob.Full_linear_matrix,-prob.Full_ind_array)
+    sol=sp.sparse.linalg.bicg(prob.Full_linear_matrix, -prob.Full_ind_array)
     end=time.time()
     np.save(os.path.join(path_output_data, 'sol'),sol)
 
