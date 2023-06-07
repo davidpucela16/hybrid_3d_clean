@@ -45,13 +45,14 @@ os.makedirs(path_matrices, exist_ok=True)
 os.makedirs(path_output_data, exist_ok=True)
 
 #True if no need to compute 
-phi_bar_bool=True
-B_assembly_bool=True
-I_assembly_bool=True
+phi_bar_bool=os.path.exists(os.path.join(path_matrices, 'phi_bar_q.npz')) and os.path.exists(os.path.join(path_matrices, 'phi_bar_s.npz')) 
+B_assembly_bool=os.path.exists(os.path.join(path_matrices, 'B_matrix.npz'))
+I_assembly_bool=os.path.exists(os.path.join(path_matrices, 'I_matrix.npz'))
 #True if need to compute
-Computation_bool=True
+string_value = sys.argv[3]
+Computation_bool = False if string_value == 'False' else bool(string_value)
 rec_bool=True
-
+print("Computation: ", Computation_bool)
 from mesh_1D import mesh_1D
 from hybridFast import hybrid_set_up
 from mesh import cart_mesh_3D
@@ -224,7 +225,7 @@ if sol_linear_system:
     print("solve problem")
     sol=sp.sparse.linalg.bicgstab(prob.Full_linear_matrix,-prob.Full_ind_array)
     pdb.set_trace()
-    np.save(os.path.join(path_output_data, 'sol'),sol)
+    np.save(os.path.join(path_matrices, 'sol'),sol[0])
 
 
 sol=np.load(os.path.join(path_matrices, 'sol.npy'))
