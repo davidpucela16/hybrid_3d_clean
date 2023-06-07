@@ -41,8 +41,9 @@ gradient="x"
 
 #path_output="/home/pdavid/Bureau/Code/hybrid3d/Synthetic_Rea{}".format(Network)
 path_output=os.path.join(path_script, "../Synthetic_Rea{}".format(Network))
-cells_3D=10
-n=3
+cells_3D=20
+n=1
+
 #Directory to save the assembled matrices and solution
 path_matrices=os.path.join(path_output,"F{}_n{}".format(cells_3D, n))
 #Directory to save the divided fiiles of the network
@@ -64,11 +65,13 @@ os.makedirs(path_output_data, exist_ok=True)
 os.makedirs(os.path.join(path_matrices, "E_portion"), exist_ok=True)
 
 #True if no need to compute
-phi_bar_bool=True
-B_assembly_bool=True
-I_assembly_bool=True
+#True if no need to compute 
+phi_bar_bool=os.path.exists(os.path.join(path_matrices, 'phi_bar_q.npz')) and os.path.exists(os.path.join(path_matrices, 'phi_bar_s.npz')) 
+B_assembly_bool=os.path.exists(os.path.join(path_matrices, 'B_matrix.npz'))
+I_assembly_bool=os.path.exists(os.path.join(path_matrices, 'I_matrix.npz'))
 #True if need to compute
-Computation_bool=True
+
+Computation_bool = not os.path.exists(os.path.join(path_matrices, 'sol.npy'))
 rec_bool=True
 
 sys.path.append(os.path.join(path_script, "src_final"))
@@ -133,9 +136,6 @@ with open(output_dir_network + '/output_6.txt', 'r') as file:
 Flow_rate=np.ndarray.flatten(df.values)*1e3
 
 
-
-#%%
-
 K=np.average(diameters)/np.ndarray.flatten(diameters)
 #The flow rate is given in nl/s
 U = 4*Flow_rate/np.pi/diameters**2*1e9 #To convert to speed in micrometer/second
@@ -160,7 +160,8 @@ startVertex=edges[:,0]
 endVertex=edges[:,1]
 
 CheckLocalConservativenessFlowRate(startVertex,endVertex, vertex_to_edge, Flow_rate)
-#%%
+
+#%% - Creation of the 3D and Network objects
 L_3D=np.array([305,305,305])
 
 #Set artificial BCs for the network 
@@ -204,6 +205,7 @@ if sol_linear_system:
     prob.Full_ind_array[:cells_3D**2]-=M_D*mesh.h**3
     print("If all BCs are newton the sum of all coefficients divided by the length of the network should be close to 1", np.sum(prob.B_matrix.toarray())/np.sum(net.L))
     begin=time.time()
+    plt.spy(prob.Full_linear_matrix)
     pdb.set_trace()
     #sol=dir_solve(prob.Full_linear_matrix,-prob.Full_ind_array)
     sol=sp.sparse.linalg.bicg(prob.Full_linear_matrix, -prob.Full_ind_array)
@@ -212,7 +214,7 @@ if sol_linear_system:
 
 sol=np.load(os.path.join(path_output_data, 'sol.npy'))
 prob.q=sol[-2*prob.S:-prob.S]
-prob.s=sol[:-prob.S]
+prob.s=sol[:-2*prob.S]
 prob.Cv=sol[-prob.S:]
 # =============================================================================
 # for i in range(3):

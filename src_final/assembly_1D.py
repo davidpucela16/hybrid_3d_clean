@@ -55,17 +55,21 @@ def SetArtificialBCs(vertex_to_edge, entry_concentration, exit_concentration, in
 def CheckLocalConservativenessFlowRate(init, end, vertex_to_edge, flow_rate):
     """Checks if mass is conserved at the bifurcations"""
     vertex=0
+    non_conservation=0
+    total_flux=0
+    print("Running conservative check on bifurcations")
     for i in vertex_to_edge:
-        
         if len(i)>2:
             a=np.zeros(len(i)) #to store whether the edges are entering or exiting
             c=0
             for j in i: #Goes through each edge of the bifurcation
                 a[c]=1 if vertex==init[j] else -1  #Vessel exiting
                 c+=1
-                
-            print("Conservative Check", np.dot(flow_rate[i], a))
+                total_flux+=np.average(np.abs(flow_rate[i]))
+            #print("Conservative Check", np.dot(flow_rate[i], a))
+            non_conservation+=np.abs(np.dot(flow_rate[i], a))
         vertex+=1
+    print("normalized lack of mass conservation: ", non_conservation/total_flux)
     return
         
 

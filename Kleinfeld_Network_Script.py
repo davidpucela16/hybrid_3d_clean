@@ -26,11 +26,11 @@ path_network = os.path.join(path_script, "..") #The path with the network
 #os.chdir('/home/pdavid/Bureau/Code/hybrid3d/src_final')
 #sys.path.append('/home/pdavid/Bureau/Code/hybrid3d/src_final')
 sys.path.append(os.path.join(path_script, "src_final"))
-
+#%%
 path_output=os.path.join(path_network, "Kleinfeld")
-#cells_3D=20
-#n=1
-cells_3D, n = int(sys.argv[1]), int(sys.argv[2])
+cells_3D=20
+n=1
+#cells_3D, n = int(sys.argv[1]), int(sys.argv[2])
 print(cells_3D, n)
 path_matrices=os.path.join(path_output,"F{}_n{}".format(cells_3D, n))
 #output_dir_network="/home/pdavid/Bureau/Code/hybrid3d/Synthetic_Rea{}/{}/divided_files".format(Network, gradient)
@@ -49,7 +49,8 @@ phi_bar_bool=os.path.exists(os.path.join(path_matrices, 'phi_bar_q.npz')) and os
 B_assembly_bool=os.path.exists(os.path.join(path_matrices, 'B_matrix.npz'))
 I_assembly_bool=os.path.exists(os.path.join(path_matrices, 'I_matrix.npz'))
 #True if need to compute
-string_value = sys.argv[3]
+#string_value = sys.argv[3]
+string_value=False
 Computation_bool = False if string_value == 'False' else bool(string_value)
 rec_bool=True
 print("Computation: ", Computation_bool)
@@ -230,40 +231,19 @@ if sol_linear_system:
 
 sol=np.load(os.path.join(path_matrices, 'sol.npy'))
 prob.q=sol[-2*prob.S:-prob.S]
-prob.s=sol[:-prob.S]
+prob.s=sol[:-2*prob.S]
 prob.Cv=sol[-prob.S:]
 
-#%%
-from PrePostTemp import VisualizationTool
-res=100
-#dask.config.set({'distributed.worker.workers': 4})
-corners_2D=np.array([[0.1,0.1],[0.1,0.9],[0.9,0.1],[0.9,0.9]])
-#%% - Seq
-aax=VisualizationTool(prob, 0,1,2, np.array([[10,10],[10,295],[295,10],[295,295]]), res)
-aax.GetPlaneData(path_output_data)
-#%% - Parallel
-# =============================================================================
-# %%time
-# aax=VisualizationTool(prob, 0,1,2, np.array([[10,10],[10,295],[295,10],[295,295]]), res)
-# aax.GetPlaneDataParallel(path_output_data)
-# =============================================================================
-#%%
-#%%
-aay=VisualizationTool(prob, 1,0,2, np.array([[10,10],[10,295],[295,10],[295,295]]), res)
-aay.GetPlaneData(path_output_data)
-
-aaz=VisualizationTool(prob, 2,1,0, np.array([[10,10],[10,295],[295,10],[295,295]]), res)
-aaz.GetPlaneData(path_output_data)
-
-aax2=VisualizationTool(prob, 0,2,1, np.array([[10,10],[10,295],[295,10],[295,295]]), res)
-aax2.GetPlaneData(path_output_data)
 
 #%%
-aax.PlotData(path_output_data)
-aay.PlotData(path_output_data)
-aaz.PlotData(path_output_data)
-
-aax2.PlotData(path_output_data)
+if rec_bool:
+    res=500
+    path_vol_data=os.path.join(path_output_data, "vol_data")
+    aaz=VisualizationTool(prob, 2,0,1, np.array([[mesh.h/2,mesh.h/2],
+                                                 [mesh.h/2,mesh.L[1]-mesh.h/2],
+                                                 [mesh.L[0]-mesh.h/2,mesh.h/2],
+                                                 [mesh.L[0]-mesh.h/2,mesh.L[1]-mesh.h/2]]), res)
+    aaz.GetPlaneData(path_vol_data)
 
 
 
