@@ -275,7 +275,6 @@ class hybrid_set_up():
         
         args=path,self.n, self.mesh_3D.cells_x, self.mesh_3D.cells_y, self.mesh_3D.cells_z, self.mesh_3D.h,self.mesh_3D.pos_cells,self.mesh_1D.s_blocks, self.mesh_1D.source_edge,self.mesh_1D.tau, self.mesh_1D.pos_s, self.mesh_1D.h, self.mesh_1D.R, self.D,self.mesh_1D.sources_per_block, self.mesh_1D.quant_sources_per_block
         for i in self.mesh_1D.uni_s_blocks:
-            pdb.set_trace()
             PhiBarHelper((i, args))
 
         return 
