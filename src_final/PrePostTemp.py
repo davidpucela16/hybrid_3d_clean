@@ -9,9 +9,11 @@ import os
 import numpy as np 
 import scipy as sp 
 from post_processing import ReconstructionCoordinatesFast, GetPlaneReconstructionFast,GetCoordsPlane
+from Neighbhourhood import GetNeighbourhood
+from mesh_1D import KernelIntegralVolumeFast
 import matplotlib.pyplot as plt
 from dask import delayed
-import dask
+import numba
 import pdb
 
 from dask.distributed import Client, LocalCluster
@@ -312,3 +314,45 @@ class VisualizationTool():
                                                               1, prob.s, prob.q))
         
         return(phi,crds, others, points_a, points_b)
+
+def GetEdgeConcentration(prob):
+    edge_conc_field=np.zeros(len(prob.mesh_1D.cells))
+    for i in range(len(prob.mesh_1D.pos_s)): #goes through every single source
+        current_edge=prob.mesh_1D.source_edge[i]    
+        edge_conc_field[current_edge]+=prob.Cv[i]/prob.mesh_1D.cells[current_edge]
+    return
+
+@njit
+def GetCoarsePhi(prob, q, Cv, s):
+    net=prob.mesh_1D
+    mesh=prob.mesh_3D
+    phi=np.zeros(prob.F, dtype=np.float64)
+    for i in range(prob.F):
+        kernel_q,_=KernelIntegralVolumeFast(net.s_blocks, net.tau, net.h, net.pos_s, net.source_edge,
+                                 mesh.center,GetNeighbourhood(prob.n, mesh.cells_x, mesh.cells_y, mesh.cells_z), 
+                                 prob.D, mesh.h)
+        phi[i]=kernel_q.dot(q) + s[i]
+   
+    return phi
+
+
+def GetInitialGuess(labels, prob):
+    label_per_source=np.repeat(labels, prob.mesh_1D.cells)
+    Cv=np.zeros(prob.S)
+    Cv[np.where(label_per_source==1)[0]]=0.5
+    Cv[np.where(label_per_source==0)[0]]=1
+    K_per_source=np.repeat(prob.K, prob.mesh_1D.cells)
+    q=K_per_source*Cv
+    
+    s=-GetCoarsePhi(prob, q, Cv, np.zeros(prob.F))
+    
+    return s, q, Cv
+
+
+    
+    
+    
+    
+    
+    
+    

@@ -60,7 +60,7 @@ from mesh import cart_mesh_3D
 from post_processing import GetPlaneReconstructionFast
 from assembly_1D import AssembleVertexToEdge, PreProcessingNetwork, CheckLocalConservativenessFlowRate, CheckLocalConservativenessVelocity
 from PrePostTemp import SplitFile, SetArtificialBCs, ClassifyVertices, get_phi_bar, Get9Lines, VisualizationTool
-
+from PrePostTemp import GetInitialGuess
 
 
 if Computation_bool: 
@@ -224,6 +224,8 @@ if sol_linear_system:
     prob.Full_ind_array=prob.Full_ind_array.astype('float32')
     #sol=dir_solve(prob.Full_linear_matrix,-prob.Full_ind_array)
     print("solve problem")
+    a=GetInitialGuess(ArtVenCap_Label, prob)
+    initial_guess=np.concatenate((a[0], a[1], a[2]))
     sol=sp.sparse.linalg.bicgstab(prob.Full_linear_matrix,-prob.Full_ind_array)
     pdb.set_trace()
     np.save(os.path.join(path_matrices, 'sol'),sol[0])

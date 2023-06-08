@@ -210,9 +210,9 @@ if sol_linear_system:
     #sol=dir_solve(prob.Full_linear_matrix,-prob.Full_ind_array)
     sol=sp.sparse.linalg.bicg(prob.Full_linear_matrix, -prob.Full_ind_array)
     end=time.time()
-    np.save(os.path.join(path_output_data, 'sol'),sol)
+    np.save(os.path.join(path_matrices, 'sol'),sol)
 
-sol=np.load(os.path.join(path_output_data, 'sol.npy'))
+sol=np.load(os.path.join(path_matrices, 'sol.npy'))
 prob.q=sol[-2*prob.S:-prob.S]
 prob.s=sol[:-2*prob.S]
 prob.Cv=sol[-prob.S:]

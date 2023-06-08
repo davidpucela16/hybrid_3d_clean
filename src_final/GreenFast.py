@@ -139,6 +139,66 @@ def SimpsonSurface(a,b, function, center, h, normal, D):
             
     return integral
 
+@njit
+def SimpsonVolume(a,b, center, h, D):
+
+    points_face=np.array([[0,0,h/2],
+                         [0,0,-h/2],
+                         [0,h/2,0],
+                         [0,-h/2,0],
+                         [h/2,0,0],
+                         [-h/2,0,0]], dtype=np.float64)
+    
+    points_corners=np.array([[h/2,h/2,h/2],
+                             [h/2,-h/2,h/2],
+                             [-h/2,h/2,h/2],
+                             [-h/2,-h/2,h/2],
+                             [h/2,h/2,-h/2],
+                             [h/2,-h/2,-h/2],
+                             [-h/2,h/2,-h/2],
+                             [-h/2,-h/2,-h/2]], dtype=np.float64)
+    
+    points_edge=np.array([[0,h/2,h/2],
+                         [0,h/2,-h/2],
+                         [0,-h/2,h/2],
+                         [0,-h/2,-h/2],
+                         
+                         [h/2,0,h/2],
+                         [h/2,0,-h/2],
+                         [-h/2,0,h/2],
+                         [-h/2,0,-h/2],
+                         
+                         [h/2,h/2,0],
+                         [h/2,-h/2,0],
+                         [-h/2,h/2,0],
+                         [-h/2,-h/2,0]], dtype=np.float64)
+    #This only works because it is a Cartesian grid and the normal has to be parallel to one of the axis
+    #Other wise we would need another way to calculate this tangential vector
+    #tau represents one of the prependicular vectors to normal 
+
+    integral=0
+    for i in points_face:
+        pos=center+i
+        #The function returns two kernels that cannot be multiplied 
+        w_integral=GetSourcePotential(a,b,pos, D)
+        integral+=w_integral*16
+    
+    for i in points_corners:
+        pos=center+i
+        #The function returns two kernels that cannot be multiplied 
+        w_integral=GetSourcePotential(a,b,pos, D)
+        integral+=w_integral*1
+        
+    for i in points_edge:
+        pos=center+i
+        #The function returns two kernels that cannot be multiplied 
+        w_integral=GetSourcePotential(a,b,pos, D)
+        integral+=w_integral*4
+        
+    integral+=GetSourcePotential(a,b,center, D)*64
+    integral/=216
+    return integral
+
 
 def unit_test_Simpson(h,D):
     aa,bb=np.array([0,-0.2,0]),np.array([0,0.2,0])
