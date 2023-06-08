@@ -118,7 +118,7 @@ Fictional_edge=np.ndarray.flatten(df.values)
 df = pd.read_csv(output_dir_network + '/output_7.txt', skiprows=1, sep="\s+", names=["flow_rate"])
 with open(output_dir_network + '/output_7.txt', 'r') as file:
     # Read the first line
-    output_seven= file.readline()
+    output_seve= file.readline()
 ArtVenCap_Label=np.ndarray.flatten(df.values)
 
 df = pd.read_csv(output_dir_network + '/output_8.txt', skiprows=1, sep="\s+", names=["length"])
@@ -131,7 +131,7 @@ diameters=np.ndarray.flatten(df.values)
 df = pd.read_csv(output_dir_network + '/output_10.txt', skiprows=1, sep="\s+", names=["length"])
 with open(output_dir_network + '/output_10.txt', 'r') as file:
     # Read the first line
-    output_ten= file.readline()
+    output_te= file.readline()
 Flow_rate=np.ndarray.flatten(df.values)
 
 df = pd.read_csv(output_dir_network + '/output_12.txt', skiprows=1, sep="\s+", names=["length"])
