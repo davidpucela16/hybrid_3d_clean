@@ -9,11 +9,11 @@ import os
 import numpy as np 
 import scipy as sp 
 from post_processing import ReconstructionCoordinatesFast, GetPlaneReconstructionFast,GetCoordsPlane
-from Neighbhourhood import GetNeighbourhood
+from neighbourhood import GetNeighbourhood
 from mesh_1D import KernelIntegralVolumeFast
 import matplotlib.pyplot as plt
 from dask import delayed
-import numba
+from numba import njit
 import pdb
 
 from dask.distributed import Client, LocalCluster
@@ -174,8 +174,8 @@ class VisualizationTool():
                                                                 prob.mesh_3D.h,prob.mesh_3D.pos_cells,prob.mesh_1D.s_blocks, 
                                                                 prob.mesh_1D.source_edge,prob.mesh_1D.tau, prob.mesh_1D.pos_s, prob.mesh_1D.h, 
                                                                 prob.R, 1, prob.s, prob.q))
-                np.save(os.path.join(path, "phi_1D_{}={}_{}".format(dirs[perp_axis], int(x*100), dirs[i_axis])),phi_1D)
-                np.save(os.path.join(path, "coordinates_{}={}_{}".format(dirs[perp_axis], int(x*100), dirs[i_axis])),crds_1D)
+                np.save(os.path.join(path, "phi_1D_{}={:04g}_{}".format(dirs[perp_axis], int(x), dirs[i_axis])),phi_1D)
+                np.save(os.path.join(path, "coordinates_{}={:04g}_{}".format(dirs[perp_axis], int(x), dirs[i_axis])),crds_1D)
 
     def GetVolumeData(self, chunks, process, perp_axis_res, path):
         os.makedirs(path, exist_ok=True)
@@ -201,11 +201,11 @@ class VisualizationTool():
         for i in self.pos_array:
             plane_coord=i*prob.mesh_3D.L[perp_axis]
             #We could put phi_extra, or phi_intra, or mask 
-            phi.append(np.load(os.path.join(path, 'phi_intra_{}={}_{}_{}.npy'.format(dirs[perp_axis], int(plane_coord), dirs[i_axis], dirs[j_axis]))))
+            phi.append(np.load(os.path.join(path, 'phi_intra_{}={:04g}_{}_{}.npy'.format(dirs[perp_axis], int(plane_coord), dirs[i_axis], dirs[j_axis]))))
             
-            phi_extra.append(np.load(os.path.join(path, 'phi_extra_{}={}_{}_{}.npy'.format(dirs[perp_axis], int(plane_coord), dirs[i_axis], dirs[j_axis]))))
-            phi_1D_full.append(np.load(os.path.join(path, 'phi_1D_{}={}_{}.npy'.format(dirs[perp_axis], int(plane_coord), dirs[i_axis]))))
-            coordinates.append(np.load(os.path.join(path, "coordinates_{}={}_{}.npy".format(dirs[perp_axis], int(plane_coord), dirs[i_axis]))))
+            phi_extra.append(np.load(os.path.join(path, 'phi_extra_{}={:04g}_{}_{}.npy'.format(dirs[perp_axis], int(plane_coord), dirs[i_axis], dirs[j_axis]))))
+            phi_1D_full.append(np.load(os.path.join(path, 'phi_1D_{}={:04g}_{}.npy'.format(dirs[perp_axis], int(plane_coord), dirs[i_axis]))))
+            coordinates.append(np.load(os.path.join(path, "coordinates_{}={:04g}_{}.npy".format(dirs[perp_axis], int(plane_coord), dirs[i_axis]))))
         # Generate example matrices
         # Define the minimum and maximum values for the color scale
         vmin = np.min([phi_extra[0],phi_extra[1],phi_extra[2],phi_extra[3]])
@@ -322,16 +322,15 @@ def GetEdgeConcentration(prob):
         edge_conc_field[current_edge]+=prob.Cv[i]/prob.mesh_1D.cells[current_edge]
     return
 
-@njit
 def GetCoarsePhi(prob, q, Cv, s):
     net=prob.mesh_1D
     mesh=prob.mesh_3D
     phi=np.zeros(prob.F, dtype=np.float64)
     for i in range(prob.F):
-        kernel_q,_=KernelIntegralVolumeFast(net.s_blocks, net.tau, net.h, net.pos_s, net.source_edge,
-                                 mesh.center,GetNeighbourhood(prob.n, mesh.cells_x, mesh.cells_y, mesh.cells_z), 
+        kernel_q,sources=KernelIntegralVolumeFast(net.s_blocks, net.tau, net.h, net.pos_s, net.source_edge,
+                                 mesh.pos_cells[i],GetNeighbourhood(prob.n, mesh.cells_x, mesh.cells_y, mesh.cells_z, i), 
                                  prob.D, mesh.h)
-        phi[i]=kernel_q.dot(q) + s[i]
+        phi[i]=kernel_q.dot(q[sources]) + s[i]
    
     return phi
 
@@ -339,12 +338,12 @@ def GetCoarsePhi(prob, q, Cv, s):
 def GetInitialGuess(labels, prob):
     label_per_source=np.repeat(labels, prob.mesh_1D.cells)
     Cv=np.zeros(prob.S)
-    Cv[np.where(label_per_source==1)[0]]=0.5
     Cv[np.where(label_per_source==0)[0]]=1
+    Cv[np.where(label_per_source==1)[0]]=0.4
     K_per_source=np.repeat(prob.K, prob.mesh_1D.cells)
-    q=K_per_source*Cv
+    q=K_per_source*Cv*0.5
     
-    s=-GetCoarsePhi(prob, q, Cv, np.zeros(prob.F))
+    s=-GetCoarsePhi(prob, q, Cv, np.zeros(prob.F))+0.2
     
     return s, q, Cv
 
