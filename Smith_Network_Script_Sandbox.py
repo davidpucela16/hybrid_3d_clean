@@ -335,8 +335,8 @@ def GetSources(pos_s, pos_vertex, vertex_label, propert, entry_exit):
         IDs=np.append(IDs, source)
     return propert[IDs]
     
-plt.plot(GetSources(net.pos_s, pos_vertex, vertex_label, prob.Cv, "entering"))
-plt.plot(GetSources(net.pos_s, pos_vertex, vertex_label, prob.Cv, "exiting"))
+#plt.plot(GetSources(net.pos_s, pos_vertex, vertex_label, prob.Cv, "entering"))
+#plt.plot(GetSources(net.pos_s, pos_vertex, vertex_label, prob.Cv, "exiting"))
 
 #%% - Plot profile of concentration on entering edges
 def GetSingleEdgeConc(cells_per_segment, prop, edge):
@@ -348,7 +348,7 @@ for i in exiting:
     #plt.plot(GetSingleEdgeConc(net.cells, prob.Cv, i))
     plt.plot(GetSingleEdgeConc(net.cells, prob.Cv, i))
     plt.ylim((0,1))
-plt.show()
+#plt.show()
 
 
 #%% - To calculate different PDFs
@@ -370,7 +370,7 @@ plt.plot(unique_x, average_phi)
 plt.xlabel('Position')
 plt.ylabel('Average Concentration')
 plt.title('Average Concentration vs Position (within distance h)')
-plt.show()
+#plt.show()
 #%%
 
 # Assuming you have the arrays phi and x defined
@@ -390,4 +390,4 @@ plt.plot(unique_x, average_phi)
 plt.xlabel('Position')
 plt.ylabel('Average Concentration')
 plt.title('Average Concentration vs Position (within distance h)')
-plt.show()
+#plt.show()
