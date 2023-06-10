@@ -10,7 +10,7 @@ import numpy as np
 import scipy as sp 
 from post_processing import ReconstructionCoordinatesFast, GetPlaneReconstructionFast,GetCoordsPlane
 from neighbourhood import GetNeighbourhood
-from mesh_1D import KernelIntegralVolumeFast
+from mesh_1D import SimpsonVolume
 import matplotlib.pyplot as plt
 from dask import delayed
 from numba import njit
@@ -59,8 +59,8 @@ def SetArtificialBCs(vertex_to_edge, entry_concentration, exit_concentration, in
     for i in vertex_to_edge: #Loop over all the vertices
     #i contains the edges the vertex c is in contact with
         if len(i)==1:
-            vertex=i[0]
-            if np.in1d(i, init):
+            edge=i[0]
+            if np.in1d(c, init):
                 BCs_1D=np.vstack((BCs_1D, np.array([c, entry_concentration])))
             else:
                 BCs_1D=np.vstack((BCs_1D, np.array([c, exit_concentration])))
@@ -155,11 +155,10 @@ class VisualizationTool():
         
         dirs=np.array(["x","y","z"])
         pos_array=self.pos_array
-        full_field=[] #Will store the plane reconstruction variables 
-        phi_extra=[]
-        phi_1D_full=[]
-        coordinates=[]
+
         corners_3D=np.zeros((4,3))
+        self.vmax=0
+        self.vmin=1
         for x in pos_array*prob.mesh_3D.L[perp_axis]:
             corners_3D[:,perp_axis]=x
             corners_3D[:,i_axis]=corners_2D[:,0]
@@ -167,6 +166,8 @@ class VisualizationTool():
             phi_intra_rec,a,b, phi_extra_rec, crds=GetPlaneReconstructionFast(x, perp_axis, i_axis, j_axis,corners_3D , resolution, prob, prob.Cv, path)
             crds_1D=crds.reshape(resolution, resolution,3)[np.array(pos_array*resolution,dtype=np.int32)]
             
+            self.vmax=np.max(np.append(phi_extra_rec, self.vmax))
+            self.vmin=np.min(np.append(phi_extra_rec, self.vmin))
             phi_1D=[]
             if self.line_data:
                 for i in range(len(pos_array)):
@@ -198,6 +199,7 @@ class VisualizationTool():
         coordinates=[]
         phi_extra=[]
         phi_1D_full=[]
+        #pdb.set_trace()
         for i in self.pos_array:
             plane_coord=i*prob.mesh_3D.L[perp_axis]
             #We could put phi_extra, or phi_intra, or mask 
@@ -208,14 +210,14 @@ class VisualizationTool():
             coordinates.append(np.load(os.path.join(path, "coordinates_{}={:04g}_{}.npy".format(dirs[perp_axis], int(plane_coord), dirs[i_axis]))))
         # Generate example matrices
         # Define the minimum and maximum values for the color scale
-        vmin = np.min([phi_extra[0],phi_extra[1],phi_extra[2],phi_extra[3]])
-        vmax = np.max([phi_extra[0],phi_extra[1],phi_extra[2],phi_extra[3]])
+        vmin=self.vmin
+        vmax=self.vmax
         
         ylim=(np.min([0,np.min(phi_1D_full)]),np.max(phi_1D_full))
         
         # Plot the matrices using imshow
         fig, axs = plt.subplots(2, 4, figsize=(30,16))
-        im1 = axs[0, 0].imshow(phi[0], cmap='bwr', vmin=vmin, vmax=vmax)
+        im1 = axs[0, 0].imshow(phi[0], cmap='jet', vmin=vmin, vmax=vmax)
         axs[0, 0].set_xlabel(dirs[i_axis])
         axs[0, 0].set_ylabel(dirs[j_axis])
         axs[0, 1].plot(coordinates[0][0,:,i_axis],phi_1D_full[0].T, 
@@ -227,21 +229,21 @@ class VisualizationTool():
         axs[0, 1].set_ylim(ylim)
         axs[0, 1].legend()
 
-        im2 = axs[0, 2].imshow(phi[1], cmap='bwr', vmin=vmin, vmax=vmax)
+        im2 = axs[0, 2].imshow(phi[1], cmap='jet', vmin=vmin, vmax=vmax)
         axs[0,2].set_xlabel(dirs[i_axis])
         axs[0, 2].set_ylabel(dirs[j_axis])
         axs[0, 3].plot(coordinates[1][0,:,i_axis],phi_1D_full[1].T)
         axs[0, 3].set_xlabel(dirs[i_axis])
         axs[0, 3].set_ylim(ylim)
         
-        im3 = axs[1, 0].imshow(phi[2], cmap='bwr', vmin=vmin, vmax=vmax)
+        im3 = axs[1, 0].imshow(phi[2], cmap='jet', vmin=vmin, vmax=vmax)
         axs[1, 0].set_xlabel(dirs[i_axis])
         axs[1, 0].set_ylabel(dirs[j_axis])
         axs[1, 1].plot(coordinates[0][0,:,i_axis],phi_1D_full[2].T)
         axs[1, 1].set_xlabel(dirs[i_axis])
         axs[1, 1].set_ylim(ylim)
 
-        im4 = axs[1, 2].imshow(phi[3], cmap='bwr', vmin=vmin, vmax=vmax)
+        im4 = axs[1, 2].imshow(phi[3], cmap='jet', vmin=vmin, vmax=vmax)
         axs[1, 2].set_xlabel(dirs[i_axis])
         axs[1, 2].set_ylabel(dirs[j_axis])
         axs[1, 3].plot(coordinates[0][0,:,i_axis],phi_1D_full[3].T)
@@ -320,16 +322,15 @@ def GetEdgeConcentration(prob):
     for i in range(len(prob.mesh_1D.pos_s)): #goes through every single source
         current_edge=prob.mesh_1D.source_edge[i]    
         edge_conc_field[current_edge]+=prob.Cv[i]/prob.mesh_1D.cells[current_edge]
-    return
+    return edge_conc_field
 
 def GetCoarsePhi(prob, q, Cv, s):
     net=prob.mesh_1D
     mesh=prob.mesh_3D
     phi=np.zeros(prob.F, dtype=np.float64)
     for i in range(prob.F):
-        kernel_q,sources=KernelIntegralVolumeFast(net.s_blocks, net.tau, net.h, net.pos_s, net.source_edge,
-                                 mesh.pos_cells[i],GetNeighbourhood(prob.n, mesh.cells_x, mesh.cells_y, mesh.cells_z, i), 
-                                 prob.D, mesh.h)
+        print("FV Block: ", i)
+        kernel_q,sources=SimpsonVolume(i, prob)
         phi[i]=kernel_q.dot(q[sources]) + s[i]
    
     return phi

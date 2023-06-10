@@ -5,7 +5,7 @@ Created on Mon Feb 13 17:56:05 2023
 
 @author: pdavid
 """
-from GreenFast import GradPoint, LogLine, SimpsonSurface,SimpsonVolume, GetSourcePotential,GetSelfInfluence
+from GreenFast import GradPoint, LogLine, SimpsonSurface, GetSourcePotential,GetSelfInfluence
 from neighbourhood import GetNeighbourhood, GetMultipleNeigh
 from assembly_1D import flow
 import numpy as np
@@ -283,27 +283,77 @@ def KernelIntegralSurfaceFast(s_blocks, tau, h_net, pos_s, source_edge,center, n
         c+=1
     return q_array,  sources
 
-@njit
-def KernelIntegralVolumeFast(s_blocks, tau, h_net, pos_s, source_edge,center,neighbourhood, D, h_3D):
-    """Returns the kernel that multiplied (scalar, dot) by the array of fluxes (q) returns
-    the integral of the rapid term over the surface
-    
-    Main function used to calculate J
-    
-    h must be the disc size of the mesh_3D
-    """
-    sources=np.arange(len(s_blocks))[in1D(s_blocks, neighbourhood)]
-    #sources=in1D(s_blocks, neighbourhood)
-    q_array=np.zeros(len(sources), dtype=np.float64)
-    c=0
-    for i in sources:
-        ed=source_edge[i]
-        a,b= pos_s[i]-tau[ed]*h_net[ed]/2, pos_s[i]+tau[ed]*h_net[ed]/2
-        q_array[c]=SimpsonVolume(a,b, center,h_3D, D)
-        c+=1
-    return q_array,  sources
 
+def SimpsonVolume(block_ID, prob):
+    mesh=prob.mesh_3D
+    net=prob.mesh_1D
+    neighbourhood=GetNeighbourhood(prob.n, mesh.cells_x, mesh.cells_y, mesh.cells_z, block_ID)
+    integral_kernel, sources=KernelPointFast(mesh.pos_cells[block_ID], neighbourhood, 
+                                             net.s_blocks, net.source_edge, net.tau, net.pos_s, net.h, 
+                                             net.R,prob.D)
+    integral_kernel*=64
+    h=mesh.h
+    points_edge=np.array([[0,h/2,h/2],
+                         [0,h/2,-h/2],
+                         [0,-h/2,h/2],
+                         [0,-h/2,-h/2],
+                         
+                         [h/2,0,h/2],
+                         [h/2,0,-h/2],
+                         [-h/2,0,h/2],
+                         [-h/2,0,-h/2],
+                         
+                         [h/2,h/2,0],
+                         [h/2,-h/2,0],
+                         [-h/2,h/2,0],
+                         [-h/2,-h/2,0]], dtype=np.float64)
+    
+    points_face=np.array([[0,0,h/2],
+                         [0,0,-h/2],
+                         [0,h/2,0],
+                         [0,-h/2,0],
+                         [h/2,0,0],
+                         [-h/2,0,0]], dtype=np.float64)
+    
+    points_corners=np.array([[h/2,h/2,h/2],
+                             [h/2,-h/2,h/2],
+                             [-h/2,h/2,h/2],
+                             [-h/2,-h/2,h/2],
+                             [h/2,h/2,-h/2],
+                             [h/2,-h/2,-h/2],
+                             [-h/2,h/2,-h/2],
+                             [-h/2,-h/2,-h/2]], dtype=np.float64)
+
+    
+    #This only works because it is a Cartesian grid and the normal has to be parallel to one of the axis
+    #Other wise we would need another way to calculate this tangential vector
+    #tau represents one of the prependicular vectors to normal 
+    for i in points_edge:
+        pos=mesh.pos_cells[block_ID]+i
+        #The function returns two kernels that cannot be multiplied 
+        kernel,_=KernelPointFast(pos, neighbourhood, 
+                                 net.s_blocks, net.source_edge, net.tau, net.pos_s, net.h, 
+                                 net.R,prob.D)
+        integral_kernel+=kernel*4
         
+    for i in points_face:
+        pos=mesh.pos_cells[block_ID]+i
+        #The function returns two kernels that cannot be multiplied 
+        kernel,_=KernelPointFast(pos, neighbourhood, 
+                                 net.s_blocks, net.source_edge, net.tau, net.pos_s, net.h, 
+                                 net.R,prob.D)
+        integral_kernel+=kernel*16
+    
+    for i in points_corners:
+        pos=mesh.pos_cells[block_ID]+i
+        #The function returns two kernels that cannot be multiplied 
+        kernel,_=KernelPointFast(pos, neighbourhood, 
+                                 net.s_blocks, net.source_edge, net.tau, net.pos_s, net.h, 
+                                 net.R,prob.D)
+        integral_kernel+=kernel
+        
+    integral_kernel/=216
+    return integral_kernel, sources
 
 def test_kernel_integral():
     

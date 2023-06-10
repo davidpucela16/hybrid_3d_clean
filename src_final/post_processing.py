@@ -154,6 +154,7 @@ def GetPlaneReconstructionFast(plane_coord,plane_axis, i_axis, j_axis,corners, r
     
     phi_final=phi.reshape(resolution,resolution)
     phi_final[new_mask]=result[new_mask]
+    #pdb.set_trace()
     if save:
         dirs=np.array(["x","y","z"])
         np.save(os.path.join(save[0], 'phi_intra_{}={:04g}_{}_{}'.format(dirs[plane_axis], int(plane_coord), dirs[i_axis], dirs[j_axis])),phi_final)

@@ -73,21 +73,23 @@ def CheckLocalConservativenessFlowRate(init, end, vertex_to_edge, flow_rate):
     return
         
 
-def CheckLocalConservativenessVelocity(init, end, vertex_to_edge, flow_rate, R):
-    """Checks if mass is conserved at the bifurcations"""
-    vertex=0
-    for i in vertex_to_edge:
-        
-        if len(i)>2:
-            a=np.zeros(len(i)) #to store whether the edges are entering or exiting
-            c=0
-            for j in i: #Goes through each edge of the bifurcation
-                a[c]=1 if vertex==init[j] else -1  #Vessel exiting
-                c+=1
-                
-            print(np.dot(flow_rate[i], a))
-        vertex+=1
-    return
+# =============================================================================
+# def CheckLocalConservativenessVelocity(init, end, vertex_to_edge, flow_rate, R):
+#     """Checks if mass is conserved at the bifurcations"""
+#     vertex=0
+#     for i in vertex_to_edge:
+#         
+#         if len(i)>2:
+#             a=np.zeros(len(i)) #to store whether the edges are entering or exiting
+#             c=0
+#             for j in i: #Goes through each edge of the bifurcation
+#                 a[c]=1 if vertex==init[j] else -1  #Vessel exiting
+#                 c+=1
+#                 
+#             print(np.dot(flow_rate[i], a))
+#         vertex+=1
+#     return
+# =============================================================================
 
     
 
@@ -140,17 +142,15 @@ def AssemblyVertices(U, D, h, cells, sparse_arrs, vertex_to_edge, R, init, BCs, 
     if exit_BC: exit_BC=exit_BC[0]
     vertex=0 #counter that indicates which vertex we are on
     for i in vertex_to_edge:
-        if len(i)==1: #Boundary condition
+        if len(i)==1: #Boundary condition, only one edge attached to this vertex
             #Mount the boundary conditions here
             ed=i[0]
-            
-            
-            if init[i]!=vertex: #Then it must be the end Vertex of the edge 
+            if init[ed]!=vertex: #Then it must be the end Vertex of the edge 
                 if exit_BC=="zero_flux":
                     current_DoF=np.sum(cells[:ed])+cells[ed]-1 #End vertex 
                     kk=-1
                     sparse_arrs=AppendSparse(sparse_arrs, np.array([-U[ed]-D/h[ed],U[ed]+D/h[ed]]), np.array([current_DoF,current_DoF]), np.array([current_DoF+kk,current_DoF]))
-                    print("no flux BC on intravascular")
+                    #print("no flux BC on intravascular")
                 else:
                     current_DoF=np.sum(cells[:ed])+cells[ed]-1 #End vertex 
                     kk=-1
@@ -159,11 +159,16 @@ def AssemblyVertices(U, D, h, cells, sparse_arrs, vertex_to_edge, R, init, BCs, 
                     ind_array[current_DoF]=BCs[np.where(BCs[:,0]==vertex)[0][0],1]*value_Dirichlet #assigns the value of the BC multiplied by the factor 
                    
             else: 
+                #print("Initial vertex!!")
                 current_DoF=np.sum(cells[:ed]) #initial vertex
                 kk=1
-            
-                sparse_arrs=AppendSparse(sparse_arrs, np.array([-U[ed]-D/h[ed],U[ed]+3*D/h[ed]]), np.array([current_DoF,current_DoF]), np.array([current_DoF+kk,current_DoF]))
-                value_Dirichlet=-2*D/h[ed]
+# =============================================================================
+#                 sparse_arrs=AppendSparse(sparse_arrs, np.array([-D/h[ed]-U[ed],U[ed]+3*D/h[ed]]), np.array([current_DoF,current_DoF]), np.array([current_DoF+kk,current_DoF]))
+#                 value_Dirichlet=-2*D/h[ed]
+# =============================================================================
+                sparse_arrs=AppendSparse(sparse_arrs, np.array([-D/h[ed],U[ed]+3*D/h[ed]]), np.array([current_DoF,current_DoF]), np.array([current_DoF+kk,current_DoF]))
+                value_Dirichlet=-2*D/h[ed]-U[ed]
+                #pdb.set_trace()
                 ind_array[current_DoF]=BCs[np.where(BCs[:,0]==vertex)[0][0],1]*value_Dirichlet #assigns the value of the BC multiplied by the factor 
                 
                 
