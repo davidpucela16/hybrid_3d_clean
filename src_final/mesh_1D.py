@@ -283,73 +283,72 @@ def KernelIntegralSurfaceFast(s_blocks, tau, h_net, pos_s, source_edge,center, n
         c+=1
     return q_array,  sources
 
-
-def SimpsonVolume(block_ID, prob):
-    mesh=prob.mesh_3D
-    net=prob.mesh_1D
-    neighbourhood=GetNeighbourhood(prob.n, mesh.cells_x, mesh.cells_y, mesh.cells_z, block_ID)
-    integral_kernel, sources=KernelPointFast(mesh.pos_cells[block_ID], neighbourhood, 
-                                             net.s_blocks, net.source_edge, net.tau, net.pos_s, net.h, 
-                                             net.R,prob.D)
+@njit
+def SimpsonVolume(block_ID, prob_args):
+    n, h_3D,cells_x, cells_y, cells_z, pos_cells, s_blocks, source_edge, tau, pos_s, h_1D, R, D=prob_args
+    neighbourhood=GetNeighbourhood(n, cells_x, cells_y, cells_z, block_ID)
+    integral_kernel, sources=KernelPointFast(pos_cells[block_ID], neighbourhood, 
+                                             s_blocks, source_edge, tau, pos_s, h_1D, 
+                                             R,D)
     integral_kernel*=64
-    h=mesh.h
-    points_edge=np.array([[0,h/2,h/2],
-                         [0,h/2,-h/2],
-                         [0,-h/2,h/2],
-                         [0,-h/2,-h/2],
+    h_3D
+    points_edge=np.array([[0,h_3D/2,h_3D/2],
+                         [0,h_3D/2,-h_3D/2],
+                         [0,-h_3D/2,h_3D/2],
+                         [0,-h_3D/2,-h_3D/2],
                          
-                         [h/2,0,h/2],
-                         [h/2,0,-h/2],
-                         [-h/2,0,h/2],
-                         [-h/2,0,-h/2],
+                         [h_3D/2,0,h_3D/2],
+                         [h_3D/2,0,-h_3D/2],
+                         [-h_3D/2,0,h_3D/2],
+                         [-h_3D/2,0,-h_3D/2],
                          
-                         [h/2,h/2,0],
-                         [h/2,-h/2,0],
-                         [-h/2,h/2,0],
-                         [-h/2,-h/2,0]], dtype=np.float64)
+                         [h_3D/2,h_3D/2,0],
+                         [h_3D/2,-h_3D/2,0],
+                         [-h_3D/2,h_3D/2,0],
+                         [-h_3D/2,-h_3D/2,0]], dtype=np.float64)
     
-    points_face=np.array([[0,0,h/2],
-                         [0,0,-h/2],
-                         [0,h/2,0],
-                         [0,-h/2,0],
-                         [h/2,0,0],
-                         [-h/2,0,0]], dtype=np.float64)
+    points_face=np.array([[0,0,h_3D/2],
+                         [0,0,-h_3D/2],
+                         [0,h_3D/2,0],
+                         [0,-h_3D/2,0],
+                         [h_3D/2,0,0],
+                         [-h_3D/2,0,0]], dtype=np.float64)
     
-    points_corners=np.array([[h/2,h/2,h/2],
-                             [h/2,-h/2,h/2],
-                             [-h/2,h/2,h/2],
-                             [-h/2,-h/2,h/2],
-                             [h/2,h/2,-h/2],
-                             [h/2,-h/2,-h/2],
-                             [-h/2,h/2,-h/2],
-                             [-h/2,-h/2,-h/2]], dtype=np.float64)
+    points_corners=np.array([[h_3D/2,h_3D/2,h_3D/2],
+                             [h_3D/2,-h_3D/2,h_3D/2],
+                             [-h_3D/2,h_3D/2,h_3D/2],
+                             [-h_3D/2,-h_3D/2,h_3D/2],
+                             [h_3D/2,h_3D/2,-h_3D/2],
+                             [h_3D/2,-h_3D/2,-h_3D/2],
+                             [-h_3D/2,h_3D/2,-h_3D/2],
+                             [-h_3D/2,-h_3D/2,-h_3D/2]], dtype=np.float64)
 
     
     #This only works because it is a Cartesian grid and the normal has to be parallel to one of the axis
     #Other wise we would need another way to calculate this tangential vector
     #tau represents one of the prependicular vectors to normal 
     for i in points_edge:
-        pos=mesh.pos_cells[block_ID]+i
+        pos=pos_cells[block_ID]+i
         #The function returns two kernels that cannot be multiplied 
         kernel,_=KernelPointFast(pos, neighbourhood, 
-                                 net.s_blocks, net.source_edge, net.tau, net.pos_s, net.h, 
-                                 net.R,prob.D)
+                                 s_blocks, source_edge, tau, pos_s, h_1D, 
+                                 R,D)
         integral_kernel+=kernel*4
         
     for i in points_face:
-        pos=mesh.pos_cells[block_ID]+i
+        pos=pos_cells[block_ID]+i
         #The function returns two kernels that cannot be multiplied 
         kernel,_=KernelPointFast(pos, neighbourhood, 
-                                 net.s_blocks, net.source_edge, net.tau, net.pos_s, net.h, 
-                                 net.R,prob.D)
+                                 s_blocks, source_edge, tau, pos_s, h_1D, 
+                                 R,D)
         integral_kernel+=kernel*16
     
     for i in points_corners:
-        pos=mesh.pos_cells[block_ID]+i
+        pos=pos_cells[block_ID]+i
         #The function returns two kernels that cannot be multiplied 
         kernel,_=KernelPointFast(pos, neighbourhood, 
-                                 net.s_blocks, net.source_edge, net.tau, net.pos_s, net.h, 
-                                 net.R,prob.D)
+                                 s_blocks, source_edge, tau, pos_s, h_1D, 
+                                 R,D)
         integral_kernel+=kernel
         
     integral_kernel/=216
