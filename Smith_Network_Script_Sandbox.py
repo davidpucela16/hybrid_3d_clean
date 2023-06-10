@@ -223,6 +223,8 @@ if Computation_bool:
         sol=dir_solve(Lin_matrix,-ind_array)
         sol=np.concatenate((sol, np.ones(prob.S)))
     else:
+        aa=GetInitialGuess(np.zeros(len(edges))+0, prob)
+        pdb.set_trace()
         sol=dir_solve(prob.Full_linear_matrix,-prob.Full_ind_array)
 
     # =============================================================================
@@ -249,27 +251,25 @@ print("Unconserved mass error: ", np.abs(exchanges-CMRO2_tot)/CMRO2_tot)
 
 
 #%%
-res=100
+res=40
 
 corners=np.array([[0,0],[0,L_3D[0]],[L_3D[0],0],[L_3D[0],L_3D[0]]])*shrink_factor + L_3D[0]*(1-shrink_factor)/2
 if simple_plotting:    
     
     aax=VisualizationTool(prob, 0,1,2, corners, res)
     aax.GetPlaneData(path_output_data)
+    aax.PlotData(path_output_data)
     aay=VisualizationTool(prob, 1,0,2, corners, res)
     aay.GetPlaneData(path_output_data)
-    
-    aaz=VisualizationTool(prob, 2,1,0, corners, res)
-    aaz.GetPlaneData(path_output_data)
-    
-    aax2=VisualizationTool(prob, 0,2,1, corners, res)
-    aax2.GetPlaneData(path_output_data)
-    
-    aax.PlotData(path_output_data)
     aay.PlotData(path_output_data)
-    aaz.PlotData(path_output_data)
-    
-    aax2.PlotData(path_output_data)
+# =============================================================================
+#     aaz=VisualizationTool(prob, 2,1,0, corners, res)
+#     aaz.GetPlaneData(path_output_data)
+#     aaz.PlotData(path_output_data)
+#     aax2=VisualizationTool(prob, 0,2,1, corners, res)
+#     aax2.GetPlaneData(path_output_data)
+#     aax2.PlotData(path_output_data)
+# =============================================================================
 
 if rec_bool:
     num_processes=10
@@ -283,6 +283,10 @@ phi_coarse=GetCoarsePhi(prob, prob.q, prob.Cv, prob.s)
 
 #%% - Data for Avizo
 def GetEnteringExiting(vertex_to_edge, init):
+    """Assigns a label to each edge
+        - 0 if normal edge
+        - 1 if entering boundary edge
+        - 2 if exiting boundary edge"""
     label=np.zeros(len(vertex_to_edge))
     c=0
     for i in vertex_to_edge:
@@ -335,19 +339,19 @@ plt.plot(GetSources(net.pos_s, pos_vertex, vertex_label, prob.Cv, "entering"))
 plt.plot(GetSources(net.pos_s, pos_vertex, vertex_label, prob.Cv, "exiting"))
 
 #%% - Plot profile of concentration on entering edges
-def GetEdgeConc(cells_per_segment, prop, edge):
+def GetSingleEdgeConc(cells_per_segment, prop, edge):
     return prop[np.sum(cells_per_segment[:edge]):np.sum(cells_per_segment[:edge+1])]
 
 #def GetVertexConc(vertex_to_edge, startVertex, )
 
 for i in exiting:
-    #plt.plot(GetEdgeConc(net.cells, prob.Cv, i))
-    plt.plot(GetEdgeConc(net.cells, prob.Cv, i))
+    #plt.plot(GetSingleEdgeConc(net.cells, prob.Cv, i))
+    plt.plot(GetSingleEdgeConc(net.cells, prob.Cv, i))
     plt.ylim((0,1))
 plt.show()
 
 
-#%%
+#%% - To calculate different PDFs
 
 # Assuming you have the arrays phi and x defined
 bins=50
