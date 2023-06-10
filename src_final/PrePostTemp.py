@@ -178,11 +178,11 @@ class VisualizationTool():
                 np.save(os.path.join(path, "phi_1D_{}={:04g}_{}".format(dirs[perp_axis], int(x), dirs[i_axis])),phi_1D)
                 np.save(os.path.join(path, "coordinates_{}={:04g}_{}".format(dirs[perp_axis], int(x), dirs[i_axis])),crds_1D)
 
-    def GetVolumeData(self, chunks, process, perp_axis_res, path):
+    def GetVolumeData(self, chunks, process, perp_axis_res, path, shrink_factor):
         os.makedirs(path, exist_ok=True)
         self.line_data=0
         L_perp=self.prob.mesh_3D.L[self.perp_axis]
-        perp_disc=np.linspace(0,L_perp*(1-1/perp_axis_res), perp_axis_res)+1/(2*perp_axis_res)
+        perp_disc=(np.linspace(0,L_perp*(1-1/perp_axis_res), perp_axis_res)+1/(2*perp_axis_res))*shrink_factor + L_perp*(1-shrink_factor)/2
         chunk_size=int(np.ceil(perp_axis_res/chunks))
         initial_chunk=process*chunk_size
         disc_local=perp_disc[initial_chunk:initial_chunk+chunk_size]

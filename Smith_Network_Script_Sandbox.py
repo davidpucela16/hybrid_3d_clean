@@ -33,9 +33,10 @@ pylab.rcParams.update(params)
 factor_flow=1
 cells_3D=20
 n=3
+shrink_factor=(cells_3D-1)/cells_3D
 Network=1
-gradient="y"
-
+gradient="x"
+M_D=0.0002
 
 # Paths
 script = os.path.abspath(sys.argv[0])
@@ -70,12 +71,15 @@ os.makedirs(os.path.join(path_matrices, "E_portion"), exist_ok=True)
 
 #True if no need to compute
 phi_bar_bool=os.path.exists(os.path.join(path_matrices, 'phi_bar_q.npz')) and os.path.exists(os.path.join(path_matrices, 'phi_bar_s.npz')) 
+#phi_bar_bool=False
 B_assembly_bool=os.path.exists(os.path.join(path_matrices, 'B_matrix.npz'))
-#I_assembly_bool=os.path.exists(os.path.join(path_matrices, 'I_matrix.npz'))
-I_assembly_bool=False
+#B_assembly_bool=False
+I_assembly_bool=os.path.exists(os.path.join(path_matrices, 'I_matrix.npz'))
+#I_assembly_bool=False
 #True if need to compute
-Computation_bool = True
-rec_bool=False
+Computation_bool= not os.path.exists(os.path.join(path_output_data, 'sol.npy'))
+rec_bool=True
+simple_plotting=False
 Constant_Cv=False
 
 #######################################################################################
@@ -153,11 +157,12 @@ vertex_to_edge=AssembleVertexToEdge(pos_vertex, edges)
 ########################################################################
 #   THIS IS A CRUCIAL OPERATION
 ########################################################################
-
+print("Modifying edges according to pressure gradient")
 for i in range(len(edges)):
     gradient=Pressure[2*i+1] - Pressure[2*i]
+    
     if gradient<0:
-        print("Modifying edge ", i)
+        #print("Modifying edge ", i)
         edges[i,0]=endVertex[i]
         edges[i,1]=startVertex[i]    
     
@@ -203,7 +208,7 @@ prob.I_assembly_bool=I_assembly_bool
 if Computation_bool:
     prob.AssemblyProblem(path_matrices)
     #M_D=0.001
-    M_D=0.002
+    
     Real_diff=1.2e5 #\mu m^2 / min
     CMRO2=Real_diff * M_D
     prob.Full_ind_array[:prob.F]-=M_D*mesh.h**3
@@ -224,9 +229,9 @@ if Computation_bool:
     # a=GetInitialGuess(np.ones(len(edges)), prob)
     # sol=sp.sparse.linalg.bicgstab(prob.Full_linear_matrix, -prob.Full_ind_array, x0=np.concatenate((a[0], a[1], a[2])))[0]
     # =============================================================================
-    np.save(os.path.join(path_matrices, 'sol'),sol)
+    np.save(os.path.join(path_output_data, 'sol'),sol)
 
-sol=np.load(os.path.join(path_matrices, 'sol.npy'))
+sol=np.load(os.path.join(path_output_data, 'sol.npy'))
 prob.q=sol[-2*prob.S:-prob.S]
 prob.s=sol[:-2*prob.S]
 prob.Cv=sol[-prob.S:]
@@ -235,18 +240,18 @@ prob.Cv=sol[-prob.S:]
 # prob.s=a[1]
 # prob.Cv=a[2]
 # =============================================================================
-res=20
-aaz=VisualizationTool(prob, 2,0,1, np.array([[16,16],[16,289],[289,16],[289,289]]), res)
-aaz.GetPlaneData(path_output_data)
 
+#Test Conservativeness!!!!
+CMRO2_tot=M_D*mesh.h**3*cells_3D**3
+exchanges=np.dot(prob.q, np.repeat(net.h, net.cells))
 
-aaz.PlotData(path_output_data)
-pdb.set_trace()
+print("Unconserved mass error: ", np.abs(exchanges-CMRO2_tot)/CMRO2_tot)
+
 
 #%%
-#res=100
-simple_plotting=True
-corners=np.array([[16,16],[16,289],[289,16],[289,289]])
+res=100
+
+corners=np.array([[0,0],[0,L_3D[0]],[L_3D[0],0],[L_3D[0],L_3D[0]]])*shrink_factor + L_3D[0]*(1-shrink_factor)/2
 if simple_plotting:    
     
     aax=VisualizationTool(prob, 0,1,2, corners, res)
@@ -267,12 +272,12 @@ if simple_plotting:
     aax2.PlotData(path_output_data)
 
 if rec_bool:
-    num_processes=25
+    num_processes=10
     process=0 #This must be kept to zero for the parallel reconstruction to go right
-    perp_axis_res=50
+    perp_axis_res=res
     path_vol_data=os.path.join(path_output_data, "vol_data")
     aaz=VisualizationTool(prob, 2,0,1, np.array([[16,16],[16,289],[289,16],[289,289]]), res)
-    aaz.GetVolumeData(num_processes, process, perp_axis_res, path_vol_data)
+    aaz.GetVolumeData(num_processes, process, perp_axis_res, path_vol_data, shrink_factor)
 
 phi_coarse=GetCoarsePhi(prob, prob.q, prob.Cv, prob.s)
 
@@ -335,11 +340,11 @@ def GetEdgeConc(cells_per_segment, prop, edge):
 
 #def GetVertexConc(vertex_to_edge, startVertex, )
 
-for i in entering:
+for i in exiting:
     #plt.plot(GetEdgeConc(net.cells, prob.Cv, i))
-    plt.plot(GetEdgeConc(net.cells, prob.Cv, i)[::-1])
+    plt.plot(GetEdgeConc(net.cells, prob.Cv, i))
     plt.ylim((0,1))
-    plt.show()
+plt.show()
 
 
 #%%
