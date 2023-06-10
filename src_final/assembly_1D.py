@@ -152,6 +152,7 @@ def AssemblyVertices(U, D, h, cells, sparse_arrs, vertex_to_edge, R, init, BCs, 
                     sparse_arrs=AppendSparse(sparse_arrs, np.array([-U[ed]-D/h[ed],U[ed]+D/h[ed]]), np.array([current_DoF,current_DoF]), np.array([current_DoF+kk,current_DoF]))
                     #print("no flux BC on intravascular")
                 else:
+                    print("Dirichlet BC on the intravascular system")
                     current_DoF=np.sum(cells[:ed])+cells[ed]-1 #End vertex 
                     kk=-1
                     sparse_arrs=AppendSparse(sparse_arrs, np.array([-U[ed]-D/h[ed],U[ed]+3*D/h[ed]]), np.array([current_DoF,current_DoF]), np.array([current_DoF+kk,current_DoF]))
