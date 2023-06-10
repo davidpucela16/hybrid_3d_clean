@@ -329,8 +329,12 @@ def GetCoarsePhi(prob, q, Cv, s):
     mesh=prob.mesh_3D
     phi=np.zeros(prob.F, dtype=np.float64)
     for i in range(prob.F):
-        print("FV Block: ", i)
-        kernel_q,sources=SimpsonVolume(i, prob)
+        #print("FV Block: ", i)
+        prob_args=(prob.n, prob.mesh_3D.h, prob.mesh_3D.cells_x,  prob.mesh_3D.cells_y,  
+                   prob.mesh_3D.cells_z,  prob.mesh_3D.pos_cells,  prob.mesh_1D.s_blocks, 
+                   prob.mesh_1D.source_edge, prob.mesh_1D.tau, prob.mesh_1D.pos_s, 
+                   prob.mesh_1D.h, prob.mesh_1D.R, prob.D)
+        kernel_q,sources=SimpsonVolume(i, prob_args)
         phi[i]=kernel_q.dot(q[sources]) + s[i]
    
     return phi
@@ -338,12 +342,11 @@ def GetCoarsePhi(prob, q, Cv, s):
 
 def GetInitialGuess(labels, prob):
     label_per_source=np.repeat(labels, prob.mesh_1D.cells)
-    Cv=np.zeros(prob.S)
+    Cv=np.zeros(prob.S)+0.5
     Cv[np.where(label_per_source==0)[0]]=1
     Cv[np.where(label_per_source==1)[0]]=0.4
     K_per_source=np.repeat(prob.K, prob.mesh_1D.cells)
     q=K_per_source*Cv*0.5
-    
     s=-GetCoarsePhi(prob, q, Cv, np.zeros(prob.F))+0.2
     
     return s, q, Cv
